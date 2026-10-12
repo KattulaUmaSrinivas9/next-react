@@ -37,6 +37,9 @@ jobs:
       - name: Run Jest tests
         run: npm run test:coverage -- --ci
 
+      - name: Install client-only dependency
+        run: npm install client-only
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
@@ -53,6 +56,28 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Verify Vercel build output
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -d .vercel/output || {
+            echo "ERROR: Vercel output directory was not generated."
+            exit 1
+          }
+
+          echo "Checking for hidden function configuration..."
+          if [[ -f .vercel/output/functions/_global-error.func/.vc-config.json ]]; then
+            echo "Global error function configuration found."
+          else
+            echo "Global error function configuration not found at the expected path."
+          fi
+
+          echo "Checking for client-only dependency in output..."
+          find .vercel/output -path '*/node_modules/client-only/index.js' -print || true
+
+          echo "Vercel output verification completed."
 
       - name: Upload Vercel artifact
         uses: actions/upload-artifact@v4
