@@ -68,11 +68,15 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
+          cache: npm
+
+      - name: Install project dependencies
+        run: npm ci
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Pull Vercel project configuration
+      - name: Pull Vercel production configuration
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Download artifact from verified CI run
@@ -82,6 +86,16 @@ jobs:
           path: .vercel/output
           run-id: ${{ inputs.run_id }}
           github-token: ${{ github.token }}
+
+      - name: Verify downloaded artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -d .vercel/output
+          test -f node_modules/client-only/index.js
+
+          echo "Project dependency and Vercel artifact checks passed."
 
       - name: Deploy exact artifact to production
         run: vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN"
