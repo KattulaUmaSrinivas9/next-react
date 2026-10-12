@@ -15,6 +15,8 @@ permissions:
 
 jobs:
   deploy:
+    name: Verify and deploy release
+    if: github.actor == 'KattulaUmaSrinivas9' && github.triggering_actor == 'KattulaUmaSrinivas9'
     runs-on: ubuntu-latest
 
     env:
@@ -33,29 +35,31 @@ jobs:
           set -euo pipefail
 
           if [[ ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
-            echo "Invalid workflow run ID"
+            echo "Invalid workflow run ID."
             exit 1
           fi
 
           RUN_JSON=$(gh run view "$RUN_ID" \
             --repo KattulaUmaSrinivas9/next-react \
-            --json conclusion,headSha,headBranch,workflowName)
+            --json conclusion,headSha,headBranch,workflowName,event,jobs)
 
           echo "$RUN_JSON"
 
           jq -e '
             .conclusion == "success" and
             .headBranch == "master" and
-            .workflowName == "Ci Build"
+            .workflowName == "CI - Build" and
+            .event == "push" and
+            any(.jobs[]; .name == "Validate application steps" and .conclusion == "success")
           ' <<< "$RUN_JSON" > /dev/null || {
-            echo "CI must succeed on master before deployment."
+            echo "Deployment rejected: CI must succeed on master."
             exit 1
           }
 
           echo "commit_sha=$(jq -r '.headSha' <<< "$RUN_JSON")" \
             >> "$GITHUB_OUTPUT"
 
-      - name: Checkout exact validated commit
+      - name: Checkout validated commit
         uses: actions/checkout@v6
         with:
           ref: ${{ steps.verify.outputs.commit_sha }}
