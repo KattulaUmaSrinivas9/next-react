@@ -38,6 +38,7 @@ jobs:
           fi
 
           RUN_JSON=$(gh run view "$RUN_ID" \
+            --repo KattulaUmaSrinivas9/next-react \
             --json conclusion,headSha,headBranch,workflowName)
 
           echo "$RUN_JSON"
