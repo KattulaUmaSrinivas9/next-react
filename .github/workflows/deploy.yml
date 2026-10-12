@@ -1,0 +1,82 @@
+
+name: CD - Manual Vercel Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Successful CI workflow run ID to deploy"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - name: Verify successful CI run
+        id: verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
+            echo "Invalid workflow run ID"
+            exit 1
+          fi
+
+          RUN_JSON=$(gh run view "$RUN_ID" \
+            --json conclusion,headSha,headBranch,workflowName)
+
+          echo "$RUN_JSON"
+
+          jq -e '
+            .conclusion == "success" and
+            .headBranch == "master" and
+            .workflowName == "Ci Build"
+          ' <<< "$RUN_JSON" > /dev/null || {
+            echo "CI must succeed on master before deployment."
+            exit 1
+          }
+
+          echo "commit_sha=$(jq -r '.headSha' <<< "$RUN_JSON")" \
+            >> "$GITHUB_OUTPUT"
+
+      - name: Checkout exact validated commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.verify.outputs.commit_sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel project configuration
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Download artifact from verified CI run
+        uses: actions/download-artifact@v4
+        with:
+          name: vercel-output-${{ steps.verify.outputs.commit_sha }}
+          path: .vercel/output
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Deploy exact artifact to production
+        run: vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN"

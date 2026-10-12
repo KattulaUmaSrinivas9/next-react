@@ -1,5 +1,5 @@
 
-name: Ci Build
+name: CI - Build
 on:
   workflow_dispatch:
   push:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   validate:
-    name: Validate Next.js application
+    name: Validate application steps
     runs-on: ubuntu-latest
 
     steps:
@@ -41,3 +41,35 @@ jobs:
 
       - name: Production build
         run: npm run build
+        
+      # Create the release artifact only for master pushes
+      # or a manual CI run on master, after validation succeeds.
+      - name: Install Vercel CLI
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel production configuration
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build Vercel release artifact
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: vercel build --prod --standalone --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Upload immutable release artifact
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: actions/upload-artifact@v4
+        with:
+          name: vercel-output-${{ github.sha }}
+          path: .vercel/output/
+          if-no-files-found: error
+          retention-days: 30
+
