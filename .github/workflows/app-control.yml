@@ -1,0 +1,53 @@
+
+name: App - Pause or Resume
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Choose whether to pause or resume production"
+        required: true
+        type: choice
+        options:
+          - pause
+          - resume
+
+permissions:
+  contents: read
+
+jobs:
+  control-app:
+    name: Control Vercel production
+    if: github.actor == 'KattulaUmaSrinivas9' && github.triggering_actor == 'KattulaUmaSrinivas9'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pause or resume production app
+        shell: bash
+        env:
+          ACTION: ${{ inputs.action }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$ACTION" == "pause" ]]; then
+            ENDPOINT="pause"
+          elif [[ "$ACTION" == "resume" ]]; then
+            ENDPOINT="unpause"
+          else
+            echo "Invalid action."
+            exit 1
+          fi
+
+          echo "Requesting Vercel project action: $ACTION"
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            "https://api.vercel.com/v1/projects/${VERCEL_PROJECT_ID}/${ENDPOINT}?teamId=${VERCEL_ORG_ID}" \
+            --header "Authorization: Bearer ${VERCEL_TOKEN}" \
+            --header "Content-Type: application/json"
+
+          echo
+          echo "Vercel API accepted the $ACTION request."
