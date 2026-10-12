@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, Code2, Layers3, Mail, Menu, Sparkles, X } from "lucide-react";
 
 const projects = [
@@ -8,8 +9,8 @@ const projects = [
     number: "01", category: "Commerce · Product Experience", title: "Walmart Savings & Subscriptions",
     subtitle: "Accessible shopping flows, from savings to subscriptions.",
     description: "Responsive savings pages and server-rendered subscription flows built with reusable UI components. The work focused on accessibility, performance, and clear end-to-end customer journeys across devices.",
-    work: ["Translated savings page Figma wireframes into responsive UI", "Developed server-rendered subscription pages and reusable components", "Aligned experiences with ADA and WCAG practices", "Worked on CLS and GraphQL enhancements, with feature-flagged releases"],
-    stack: ["Next.js", "React", "GraphQL", "CSS", "WCAG"], accent: "mint",
+    work: ["Turned Figma designs into a responsive Savings experience built around accessible, clear shopping flows", "Delivered server-rendered subscription journeys and reusable UI components", "Built Java/Spring Boot REST APIs and JWT-secured integrations for customer workflows", "Improved page stability and data delivery through GraphQL, feature flags, lazy loading, and API caching"],
+    stack: ["Next.js", "React", "Java", "Spring Boot", "REST APIs", "GraphQL", "WCAG"], accent: "mint",
     links: [
       { label: "Walmart Savings", href: "https://www.walmart.com/savings" },
       { label: "Walmart Subscriptions", href: "https://www.walmart.com/subscriptions" },
@@ -19,7 +20,7 @@ const projects = [
     number: "02", category: "Analytics · Retail", title: "Traffic Sense",
     subtitle: "Making customer behavior easier to understand.",
     description: "An internal analytics dashboard built to give teams more ownership of their data and reduce reliance on third-party analytics. The experience centers on clear KPIs, drill-down analysis, and useful export workflows.",
-    work: ["Led dashboard UI development", "Built interactive data visualizations with AG Grid and AM Charts", "Partnered with product and analytics teams on KPI design", "Added filtering, drill-down, and export capabilities"],
+    work: ["Led UI delivery for an internal analytics dashboard that gives teams more ownership of their reporting workflows", "Translated product and analytics requirements into focused KPI views with AG Grid and AM Charts", "Built drill-down, filtering, and export flows so users can move from summary metrics to useful detail", "Validated analytics tracking across releases to keep reported activity dependable"],
     stack: ["React", "Next.js", "AG Grid", "AM Charts", "Accessibility"], accent: "lilac",
     links: [],
   },
@@ -27,15 +28,15 @@ const projects = [
     number: "03", category: "Energy · Customer Experience", title: "DE Texas Acquisition",
     subtitle: "One place for plans, usage, and payments.",
     description: "A mobile-responsive energy web application for managing customer profiles, electricity plans, terms, utilization, and payments, designed around clear user workflows.",
-    work: ["Led wireframe design and UI implementation", "Built responsive customer self-service flows", "Worked across profile, plan, usage, and payment experiences", "Collaborated with cross-functional delivery teams"],
-    stack: ["React", "Responsive UI", "REST APIs", "Accessibility"], accent: "blue",
+    work: ["Led wireframe design and delivery of mobile-ready journeys for profiles, plans, usage, and payments", "Built enrollment and payment experiences with Next.js SSR/SSG and dynamic routes", "Integrated Cognito authentication and JWT-secured Spring REST APIs; validated an App Router/AWS Lambda proof of concept", "Created multilingual, WCAG 2.1 React/Storybook components and raised unit test coverage above 80%"],
+    stack: ["React", "Next.js", "TypeScript", "Spring Boot", "REST APIs", "AWS Cognito", "WCAG 2.1"], accent: "blue",
     links: [{ label: "Direct Energy", href: "https://www.directenergy.com/" }],
   },
   {
     number: "04", category: "Enterprise · Operations Platform", title: "Omnia",
     subtitle: "A configurable platform for web, desktop, and service operations.",
     description: "A suite of web and desktop applications for managing users, releases, regional flags, and service workflows. Dashboards surfaced container and process logs, while configurable services connected the UI to backend systems.",
-    work: ["Implemented responsive workflows from user journeys and UX wireframes, following WCAG 2.1", "Built an admin application to manage users, releases, and regional flags", "Developed server-rendered web experiences with Next.js and desktop features with Electron", "Integrated FastAPI services, OAuth2/JWT security, and socket-based process monitoring"],
+    work: ["Shipped responsive, WCAG 2.1 workflows directly from product journeys and Figma/Sketch designs", "Built the admin application from scratch for user access, releases, and regional feature flags", "Delivered Next.js web and Electron desktop clients alongside Python/FastAPI REST APIs and Java services", "Secured API workflows with OAuth2/JWT and streamed live container/process logs to dashboards over sockets"],
     stack: ["React", "Next.js", "Electron", "FastAPI", "OAuth2 / JWT", "Sockets", "WCAG 2.1"], accent: "lilac",
     links: [{ label: "About Entain", href: "https://www.entaingroup.com/about-entain/" }],
   },
@@ -43,7 +44,7 @@ const projects = [
     number: "05", category: "SaaS · Conversational AI", title: "Techforce Chatbot",
     subtitle: "A configurable chatbot platform built from connected services.",
     description: "A multi-service chatbot product with a React interface, NLP training, chat history, feedback, and content management. The SaaS release brought together nine containerized services behind configurable environment settings.",
-    work: ["Built dialog modeler and catalogue UI features", "Integrated training, chat history, and feedback services", "Added configurable environment-based behavior", "Prepared a nine-service Dockerized SaaS release"],
+    work: ["Built React dialog-modeler and catalogue features backed by Node/Express and NLP services", "Connected training, chat history, and feedback APIs across the product's microservices", "Queued NLP training jobs with RabbitMQ to avoid spawning every process at once and overloading VMs", "Packaged nine services into a Dockerized SaaS release and adapted build scripts for cloud marketplace delivery"],
     stack: ["React", "Node.js", "RabbitMQ", "Elasticsearch", "Docker"], accent: "gold",
     links: [{ label: "Supervity", href: "https://www.supervity.ai/" }],
   },
@@ -51,30 +52,56 @@ const projects = [
     number: "06", category: "Education · Mobile", title: "Digital Books",
     subtitle: "Learning content that works across platforms.",
     description: "A digital books experience for web and mobile, with reusable Angular components and offline access. Automated content ingestion helped move book data and assets into MongoDB and AWS S3.",
-    work: ["Developed web and mobile experiences with Angular and Ionic", "Added offline book access for remote use", "Automated content ingestion, reducing manual work by 90%", "Connected REST services and AWS S3 assets"],
+    work: ["Built reusable Angular and Ionic experiences for web, iOS, and Android digital books", "Added offline reading so learners could access books without a network connection", "Automated hierarchical book and asset ingestion into MongoDB and S3, reducing manual processing by 90%", "Implemented Java/Spring services and REST integrations for book, user, and assessment workflows"],
     stack: ["Angular", "Ionic", "TypeScript", "MongoDB", "AWS S3"], accent: "blue",
     links: [{ label: "OneLern Experience", href: "https://www.onelern.com/experience" }],
   },
 ];
 
 const experience = [
-  { years: "2025 — Now", company: "Walmart Inc.", role: "UI Full Stack Engineer", focus: "Retail analytics, subscriptions & accessible commerce", highlights: ["Led development of a custom analytics dashboard to increase data ownership and reduce third-party dependency.", "Built responsive Next.js experiences and reusable accessible components for subscriptions and savings.", "Created data visualization workflows with drill-down, filtering, and export.", "Improved performance with memoization, lazy loading, API caching, and efficient state management."] },
-  { years: "2023 — 2025", company: "Zelante Technologies", role: "Senior UI Developer", focus: "Energy customer experiences · NRG Energy", highlights: ["Led wireframe design and implementation of a mobile-responsive customer web application.", "Built workflows for profiles, electricity plans, utilization, and payments.", "Focused on responsive, accessible experiences and cross-functional delivery."] },
-  { years: "2021 — 2023", company: "Ivy Comptech / Entain", role: "Senior Software Engineer", focus: "Omnia · Web, desktop & operations platform", highlights: ["Built responsive web workflows and server-rendered Next.js applications, plus Electron desktop features.", "Developed an admin app for users, releases, and regional flags.", "Integrated FastAPI services, OAuth2/JWT security, and socket-based dashboards for container and process logs."] },
-  { years: "2019 — 2021", company: "Digitamize / Techforce.ai", role: "Full Stack Developer", focus: "Conversational AI · SaaS · Microservices", highlights: ["Built conversational product features with React, Node.js, NLP services, and content management.", "Dockerized a nine-service chatbot platform and supported SaaS releases.", "Implemented queue-based NLP training workflows with RabbitMQ."] },
-  { years: "2017 — 2019", company: "Fortunapix Pvt Ltd", role: "MERN Stack Developer", focus: "Education technology · Digital books", highlights: ["Built responsive web and mobile learning experiences with Angular and Ionic.", "Automated content ingestion into MongoDB and AWS S3, reducing manual processing time by 90%.", "Contributed to REST services and offline access for digital books."] },
+  { years: "2025 — Now", company: "Walmart Inc.", role: "UI Full Stack Engineer", focus: "Retail analytics, subscriptions & accessible commerce", highlights: ["Lead delivery across internal analytics and customer-facing Savings and subscription experiences.", "Build secure REST APIs with Java/Spring Boot and JWT authorization, alongside Next.js SSR customer flows.", "Turn KPI requirements into interactive AG Grid and AM Charts views with filtering, drill-down, and export.", "Improve rendering and API performance; validate quality with over 90% unit test coverage, Playwright/TestCafe flows, and NVDA/VoiceOver checks."] },
+  { years: "2023 — 2025", company: "Zelante Technologies", role: "Senior UI Developer", focus: "Energy customer experiences · NRG Energy", highlights: ["Led full-stack delivery of mobile-ready customer journeys for profiles, plans, usage, and payments.", "Built React/Next.js experiences and secure Spring REST integrations using Cognito and JWT; explored an App Router/AWS Lambda proof of concept.", "Created reusable, multilingual Storybook components meeting WCAG 2.1 and used SSR/SSG to improve first-load performance and SEO.", "Raised unit test coverage above 80% and reduced deployment errors by 30% through Jenkins and SonarQube workflows."] },
+  { years: "2021 — 2023", company: "Ivy Comptech / Entain", role: "Senior Software Engineer", focus: "Omnia · Web, desktop & operations platform", highlights: ["Turned product journeys and UX designs into responsive, WCAG-aligned Next.js web and Electron desktop workflows.", "Created an admin application from scratch for user management, releases, and regional feature flags.", "Developed Python/FastAPI REST APIs and integrated Java microservices behind product workflows.", "Secured API access with OAuth2/JWT and streamed live container/process logs to dashboards over sockets."] },
+  { years: "2019 — 2021", company: "Digitamize / Techforce.ai", role: "Full Stack Developer", focus: "Conversational AI · SaaS · Microservices", highlights: ["Built React chatbot and NLP Trainer features with Node/Express APIs for dialog modeling, training, chat history, and feedback.", "Designed RabbitMQ-backed NLP job queues to control concurrent workloads and prevent VM overload.", "Integrated Keycloak and ForgeRock authentication and supported migration of auth data from MongoDB to PostgreSQL.", "Dockerized nine services and prepared build/release scripts for cloud marketplace delivery."] },
+  { years: "2017 — 2019", company: "Fortunapix Pvt Ltd", role: "MERN Stack Developer", focus: "Education technology · Digital books", highlights: ["Delivered Angular and Ionic digital book experiences across web and mobile platforms.", "Implemented Java/Spring REST services for book, user, and assessment workflows, with offline reading in the mobile app.", "Automated content and asset ingestion into MongoDB and AWS S3, reducing manual processing by 90%.", "Built reusable UI components and supported a modular Kubernetes deployment."] },
 ];
 
 const skillGroups = {
   Frontend: ["React", "Next.js", "Angular", "JavaScript", "TypeScript", "HTML / CSS", "Storybook", "Accessibility"],
   Backend: ["Node.js", "Express", "Java", "Spring Boot", "Python", "REST APIs", "GraphQL"],
-  Cloud: ["AWS", "Docker", "Kubernetes", "Jenkins", "GitHub Actions", "CI / CD"],
+  Cloud: ["CI/CD", "Docker", "Kubernetes", "Jenkins", "GitHub Actions", "AWS"],
   Data: ["PostgreSQL", "MongoDB", "DynamoDB", "Elasticsearch", "RabbitMQ", "AG Grid", "AM Charts"],
   Quality: ["Jest", "React Testing Library", "Playwright", "TestCafe", "WCAG", "NVDA / VoiceOver"],
 };
 
 type SkillGroup = keyof typeof skillGroups;
 const groupNames = Object.keys(skillGroups) as SkillGroup[];
+const featuredTechnologies = ["React", "Next.js", "Node.js", "Docker", "Java", "Python", "AWS"];
+const remainingTechnologies = Object.values(skillGroups).flat().filter((technology) => !featuredTechnologies.includes(technology));
+const blogArticles = [
+  { title: "React deployments with runtime configuration", href: "https://umasrinivask.medium.com/React-application-deployments-with-runtime-configuration-dd42820e3f50", type: "DEPLOYMENT" },
+  { title: "Multi-stage Docker images for React apps", href: "https://umasrinivask.medium.com/build-a-multi-stage-docker-image-for-React-app-to-load-runtime-environment-settings-911517f5f58d", type: "DOCKER" },
+  { title: "Dockerize Elasticsearch & Kibana securely", href: "https://umasrinivask.medium.com/dockerize-elasticsearch-kibana-with-x-packs-security-237589acb3fd", type: "ELASTICSEARCH" },
+  { title: "Nginx as a reverse proxy with Docker Compose", href: "https://umasrinivask.medium.com/configure-nginx-as-a-reverse-proxy-with-docker-compose-file-4ebba2b75c89", type: "INFRASTRUCTURE" },
+];
+const techStarPositions: [number, number][] = (() => {
+  const positions: [number, number][] = [];
+  let seed = 42817;
+  const random = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+
+  for (let attempt = 0; positions.length < remainingTechnologies.length && attempt < 5000; attempt += 1) {
+    const left = 5 + random() * 90;
+    const top = 7 + random() * 86;
+    const portraitClearance = ((left - 50) / 18.5) ** 2 + ((top - 50) / 26.5) ** 2;
+    const spacedFromStars = positions.every(([x, y]) => Math.hypot((left - x) * 3.4, (top - y) * 2.5) > 25);
+    if (portraitClearance > 1.12 && spacedFromStars) positions.push([left, top]);
+  }
+
+  return positions;
+})();
 
 export default function Portfolio() {
   const [activeProject, setActiveProject] = useState(0);
@@ -104,7 +131,7 @@ export default function Portfolio() {
           <div className="hero-actions"><a className="button button-primary" href="#work">Explore my work <ArrowDown size={16} /></a><a className="text-link" href="mailto:umasrinivas9k@gmail.com"><Mail size={16} /> Get in touch</a></div>
           <div className="hero-meta"><span><Code2 size={14} /> UI · Full Stack</span><span>10 years building for the web</span></div>
         </div>
-        <div className="hero-art" aria-label="Interactive abstract pattern" role="img" onPointerMove={(event) => {
+        <div className="hero-art" aria-label="Portrait surrounded by interactive technology stars" role="group" onPointerMove={(event) => {
           const bounds = event.currentTarget.getBoundingClientRect();
           const x = (event.clientX - bounds.left) / bounds.width - 0.5;
           const y = (event.clientY - bounds.top) / bounds.height - 0.5;
@@ -112,15 +139,41 @@ export default function Portfolio() {
           event.currentTarget.style.setProperty("--grid-shift-y", `${y * 4}px`);
           event.currentTarget.style.setProperty("--orbit-shift-x", `${x * 7}px`);
           event.currentTarget.style.setProperty("--orbit-shift-y", `${y * 6}px`);
-          event.currentTarget.style.setProperty("--sun-shift-x", `${x * -6}px`);
-          event.currentTarget.style.setProperty("--sun-shift-y", `${y * -5}px`);
-          event.currentTarget.style.setProperty("--card-shift-x", `${x * 12}px`);
-          event.currentTarget.style.setProperty("--card-shift-y", `${y * 9}px`);
+          event.currentTarget.style.setProperty("--portrait-shift-x", `${x * -6}px`);
+          event.currentTarget.style.setProperty("--portrait-shift-y", `${y * -5}px`);
         }} onPointerLeave={(event) => {
-          ["--grid-shift-x", "--grid-shift-y", "--orbit-shift-x", "--orbit-shift-y", "--sun-shift-x", "--sun-shift-y", "--card-shift-x", "--card-shift-y"].forEach((property) => event.currentTarget.style.setProperty(property, "0px"));
+          ["--grid-shift-x", "--grid-shift-y", "--orbit-shift-x", "--orbit-shift-y", "--portrait-shift-x", "--portrait-shift-y"].forEach((property) => event.currentTarget.style.setProperty(property, "0px"));
         }}>
-          <div className="art-grid" /><div className="orbit orbit-one"><span className="orbit-node orbit-node-one" /></div><div className="orbit orbit-two"><span className="orbit-node orbit-node-two" /></div><div className="art-sun" /><div className="art-card"><span className="art-card-label">CURRENTLY BUILDING</span><strong>Useful things<br />for real people.</strong><span className="art-card-foot"><span className="status-dot" /> React · Product UI</span></div>
-          <span className="art-index">INTERACTIVE STUDY · 01 / 06</span><span className="art-caption">DESIGN WITH INTENT<br />ENGINEER FOR SCALE</span>
+          <div className="art-grid" />
+          <div className="tech-starfield" aria-label="Additional technology stars">
+            {remainingTechnologies.map((technology, index) => {
+              const [left, top] = techStarPositions[index];
+              const edgeClass = left < 16 ? "tech-star-left" : left > 84 ? "tech-star-right" : "";
+              const verticalClass = top > 72 ? "tech-star-above" : "";
+              return <button key={technology} type="button" className={`tech-star ${edgeClass} ${verticalClass}`} style={{ left: `${left}%`, top: `${top}%` }} aria-label={technology} data-tech={technology} />;
+            })}
+          </div>
+          <div className="profile-planets" aria-label="External profiles">
+            <div className="jupiter-system" aria-label="Code profile with orbiting particles">
+              <div className="jupiter-granules jupiter-granules-outer" aria-hidden="true">{Array.from({ length: 44 }, (_, index) => { const angle = index * 2.39996; const wobble = ((index * 37) % 17) / 17; const radiusX = 43 + wobble * 13; const radiusY = 41 + ((index * 23) % 19) / 19 * 13; const size = .8 + ((index * 11) % 13) / 13 * 1.5; return <i key={index} style={{ left: `${50 + Math.cos(angle) * radiusX}%`, top: `${50 + Math.sin(angle) * radiusY}%`, width: size, height: size }} />; })}</div>
+              <div className="jupiter-granules jupiter-granules-inner" aria-hidden="true">{Array.from({ length: 32 }, (_, index) => { const angle = index * 2.39996 + .6; const wobble = ((index * 29) % 15) / 15; const radiusX = 42 + wobble * 12; const radiusY = 40 + ((index * 17) % 17) / 17 * 12; const size = .8 + ((index * 7) % 11) / 11 * 1.4; return <i key={index} style={{ left: `${50 + Math.cos(angle) * radiusX}%`, top: `${50 + Math.sin(angle) * radiusY}%`, width: size, height: size }} />; })}</div>
+              <a className="profile-planet profile-planet-code" href="https://github.com/kattulaumasrinivas" target="_blank" rel="noreferrer" aria-label="GitHub" />
+            </div>
+            <a className="profile-planet profile-planet-network" href="https://www.linkedin.com/feed/update/urn:li:activity:6713165668218499072" target="_blank" rel="noreferrer" aria-label="LinkedIn" />
+            <div className="writing-planet-system" aria-label="Writing planet with four orbiting articles">
+              <div className="blog-orbit">
+                {blogArticles.map((article, index) => <a key={article.href} className={`blog-moon blog-moon-${index + 1}`} href={article.href} target="_blank" rel="noreferrer" aria-label={article.title} title={article.title} />)}
+              </div>
+              <a className="profile-planet profile-planet-writing" href="https://umasrinivask.medium.com/" target="_blank" rel="noreferrer" aria-label="Blogs" />
+            </div>
+          </div>
+          <div className="orbit orbit-one" role="group" aria-label="Featured technologies orbiting Uma">
+            <span className="orbit-tech orbit-tech-one"><span>React</span></span><span className="orbit-tech orbit-tech-two"><span>Next.js</span></span><span className="orbit-tech orbit-tech-three"><span>Node.js</span></span><span className="orbit-tech orbit-tech-seven"><span>Docker</span></span>
+          </div>
+          <div className="orbit orbit-two" role="group" aria-label="More featured technologies">
+            <span className="orbit-tech orbit-tech-four"><span>Applied AI</span></span><span className="orbit-tech orbit-tech-five"><span>AWS</span></span><span className="orbit-tech orbit-tech-six"><span>Java</span></span><span className="orbit-tech orbit-tech-eight"><span>Python</span></span>
+          </div>
+          <div className="portrait-frame"><Image src="/photo.png" alt="" width={220} height={220} priority className="portrait-image" /></div>
         </div>
         <div className="hero-bottom"><span><span className="hero-specialty-highlight">FRONTEND × FULL STACK × PRODUCT THINKING × APPLIED AI</span></span><a href="#about" aria-label="Scroll to about"><ArrowDown size={16} /></a><span>SCROLL TO EXPLORE</span></div>
       </section>
@@ -151,9 +204,9 @@ export default function Portfolio() {
 
       <section className="skills-section" id="skills"><div className="section-wrap skills-layout"><div className="skills-intro"><div className="eyebrow">THE TOOLS ARE ONLY PART OF IT</div><h2>A flexible<br /><span>toolkit.</span></h2><p>Pick a lane to explore the technologies and practices I reach for most.</p><div className="skill-categories" role="tablist" aria-label="Skill categories">{groupNames.map((group) => <button key={group} role="tab" aria-selected={skillGroup === group} className={skillGroup === group ? "skill-tab skill-tab-active" : "skill-tab"} onClick={() => setSkillGroup(group)}>{group}<ArrowUpRight size={13} /></button>)}</div></div><div className="skills-panel"><div className="skills-panel-top"><span><Layers3 size={16} /> {skillGroup}</span><span>0{groupNames.indexOf(skillGroup) + 1} / 0{groupNames.length}</span></div><div className="skills-cloud" role="tabpanel">{skillGroups[skillGroup].map((skill, index) => <span key={skill} className={index === 0 ? "skill-pill skill-pill-featured" : "skill-pill"}>{skill}{index === 0 && <Sparkles size={13} />}</span>)}</div><div className="skills-note"><span className="status-dot" /> ALWAYS LEARNING, ALWAYS SHIPPING</div></div></div></section>
 
-      <section className="writing-section section-wrap"><div className="section-heading"><div><div className="eyebrow">NOTES FROM THE BUILD</div><h2>Writing &amp; community<span className="heading-period">.</span></h2></div><p>Practical notes on shipping, deployment, and the infrastructure that supports great product experiences.</p></div><div className="writing-list"><a href="https://umasrinivask.medium.com/React-application-deployments-with-runtime-configuration-dd42820e3f50" target="_blank" rel="noreferrer"><span className="writing-number">01</span><span className="writing-title">React deployments with runtime configuration</span><span className="writing-type">DEPLOYMENT</span><ArrowUpRight size={17} /></a><a href="https://umasrinivask.medium.com/build-a-multi-stage-docker-image-for-React-app-to-load-runtime-environment-settings-911517f5f58d" target="_blank" rel="noreferrer"><span className="writing-number">02</span><span className="writing-title">Multi-stage Docker images for React apps</span><span className="writing-type">DOCKER</span><ArrowUpRight size={17} /></a><a href="https://umasrinivask.medium.com/dockerize-elasticsearch-kibana-with-x-packs-security-237589acb3fd" target="_blank" rel="noreferrer"><span className="writing-number">03</span><span className="writing-title">Dockerize Elasticsearch &amp; Kibana securely</span><span className="writing-type">ELASTICSEARCH</span><ArrowUpRight size={17} /></a><a href="https://umasrinivask.medium.com/configure-nginx-as-a-reverse-proxy-with-docker-compose-file-4ebba2b75c89" target="_blank" rel="noreferrer"><span className="writing-number">04</span><span className="writing-title">Nginx as a reverse proxy with Docker Compose</span><span className="writing-type">INFRASTRUCTURE</span><ArrowUpRight size={17} /></a></div></section>
+      <section className="writing-section section-wrap"><div className="section-heading"><div><div className="eyebrow">NOTES FROM THE BUILD</div><h2>Writing &amp; community<span className="heading-period">.</span></h2></div><p>Practical notes on shipping, deployment, and the infrastructure that supports great product experiences.</p></div><div className="writing-list">{blogArticles.map((article, index) => <a key={article.href} href={article.href} target="_blank" rel="noreferrer"><span className="writing-number">0{index + 1}</span><span className="writing-title">{article.title}</span><span className="writing-type">{article.type}</span><ArrowUpRight size={17} /></a>)}</div></section>
 
-      <footer className="footer"><div className="section-wrap"><div className="footer-cta"><div><div className="eyebrow">HAVE A GOOD PROBLEM TO SOLVE?</div><h2>Let&apos;s make it<br /><span>make sense.</span></h2></div><div className="footer-contact-links"><a className="footer-email" href="mailto:umasrinivas9k@gmail.com">umasrinivas9k@gmail.com <ArrowUpRight size={20} /></a><a className="footer-phone" href="tel:+14795608479">+1 (479) 560-8479</a></div></div><div className="footer-bottom"><a className="wordmark" href="#top" aria-label="K. Uma Srinivas, home"><span className="wordmark-mark">K<span>.</span></span><span>UMA SRINIVAS</span></a><span>UI FULL STACK ENGINEER · 2026</span><div><a href="https://github.com/kattulaumasrinivas" target="_blank" rel="noreferrer">GITHUB <ArrowUpRight size={12} /></a><a href="https://www.linkedin.com/feed/update/urn:li:activity:6713165668218499072" target="_blank" rel="noreferrer">LINKEDIN <ArrowUpRight size={12} /></a></div></div></div></footer>
+      <footer className="footer"><div className="section-wrap"><div className="footer-cta"><div><div className="eyebrow">HAVE A GOOD PROBLEM TO SOLVE?</div><h2>Let&apos;s make it<br /><span>make sense.</span></h2></div><div className="footer-contact-links"><a className="footer-email" href="mailto:umasrinivas9k@gmail.com">umasrinivas9k@gmail.com <ArrowUpRight size={20} /></a><a className="footer-phone" href="tel:+14795608479">+1 (479) 560-8479</a></div></div><div className="footer-bottom"><a className="wordmark" href="#top" aria-label="K. Uma Srinivas, home"><span className="wordmark-mark">K<span>.</span></span><span>UMA SRINIVAS</span></a><span>UI FULL STACK ENGINEER · 2026</span><div><a href="https://github.com/kattulaumasrinivas" target="_blank" rel="noreferrer">CODE <ArrowUpRight size={12} /></a><a href="https://www.linkedin.com/feed/update/urn:li:activity:6713165668218499072" target="_blank" rel="noreferrer">PROFILE <ArrowUpRight size={12} /></a></div></div></div></footer>
     </main>
   );
 }
