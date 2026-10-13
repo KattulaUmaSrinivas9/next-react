@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, Code2, Layers3, Mail, Menu, Sparkles, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, Code2, Layers3, Mail, Menu, Pause, Play, Sparkles, X } from "lucide-react";
 
 const projects = [
   {
     number: "01", category: "Commerce · Product Experience", title: "Walmart Savings & Subscriptions",
     subtitle: "Accessible shopping flows, from savings to subscriptions.",
     description: "Responsive savings pages and server-rendered subscription flows built with reusable UI components. The work focused on accessibility, performance, and clear end-to-end customer journeys across devices.",
-    work: ["Turned Figma designs into a responsive Savings experience built around accessible, clear shopping flows", "Delivered server-rendered subscription journeys and reusable UI components", "Built Java/Spring Boot REST APIs and JWT-secured integrations for customer workflows", "Improved page stability and data delivery through GraphQL, feature flags, lazy loading, and API caching"],
-    stack: ["Next.js", "React", "Java", "Spring Boot", "REST APIs", "GraphQL", "WCAG"], accent: "mint",
+    work: ["Turned Figma designs into a responsive Savings experience built around accessible, clear shopping flows", "Delivered server-rendered subscription journeys and reusable UI components", "Improved page stability and data delivery through GraphQL, feature flags, lazy loading, and API caching"],
+    stack: ["Next.js", "React", "GraphQL", "WCAG"], accent: "mint",
     links: [
       { label: "Walmart Savings", href: "https://www.walmart.com/savings" },
       { label: "Walmart Subscriptions", href: "https://www.walmart.com/subscriptions" },
@@ -20,8 +20,8 @@ const projects = [
     number: "02", category: "Analytics · Retail", title: "Traffic Sense",
     subtitle: "Making customer behavior easier to understand.",
     description: "An internal analytics dashboard built to give teams more ownership of their data and reduce reliance on third-party analytics. The experience centers on clear KPIs, drill-down analysis, and useful export workflows.",
-    work: ["Led UI delivery for an internal analytics dashboard that gives teams more ownership of their reporting workflows", "Translated product and analytics requirements into focused KPI views with AG Grid and AM Charts", "Built drill-down, filtering, and export flows so users can move from summary metrics to useful detail", "Validated analytics tracking across releases to keep reported activity dependable"],
-    stack: ["React", "Next.js", "AG Grid", "AM Charts", "Accessibility"], accent: "lilac",
+    work: ["Led UI delivery for an internal analytics dashboard that gives teams more ownership of their reporting workflows", "Built Java/Spring Boot REST APIs for Walmart’s Traffic Sense analytics workflows", "Translated product and analytics requirements into focused KPI views with AG Grid and AM Charts", "Built drill-down, filtering, and export flows so users can move from summary metrics to useful detail", "Validated analytics tracking across releases to keep reported activity dependable"],
+    stack: ["React", "Next.js", "Java", "Spring Boot", "REST APIs", "AG Grid", "AM Charts", "Accessibility"], accent: "lilac",
     links: [],
   },
   {
@@ -67,17 +67,19 @@ const experience = [
 ];
 
 const skillGroups = {
-  Frontend: ["React", "Next.js", "Angular", "JavaScript", "TypeScript", "HTML / CSS", "Storybook", "Accessibility"],
-  Backend: ["Node.js", "Express", "Java", "Spring Boot", "Python", "REST APIs", "GraphQL"],
-  Cloud: ["CI/CD", "Docker", "Kubernetes", "Jenkins", "GitHub Actions", "AWS"],
-  Data: ["PostgreSQL", "MongoDB", "DynamoDB", "Elasticsearch", "RabbitMQ", "AG Grid", "AM Charts"],
-  Quality: ["Jest", "React Testing Library", "Playwright", "TestCafe", "WCAG", "NVDA / VoiceOver"],
+  Frontend: ["HTML", "CSS", "JavaScript", "jQuery", "AJAX", "Bootstrap", "React", "Next.js", "Angular", "TypeScript", "WordPress", "Socket.IO", "Strapi Headless CMS", "Storybook", "JSON", "API integration"],
+  Backend: ["Node.js", "Express.js", "Java", "Spring Boot", "JPA", "Thymeleaf", "Play Framework", "Python", "Bottle", "FastAPI", "Microsoft Bot Framework", "REST APIs", "GraphQL", "RabbitMQ"],
+  Data: ["SQL", "NoSQL", "PostgreSQL", "MongoDB", "Elasticsearch", "AG Grid", "AM Charts"],
+  AI: ["Rasa", "TensorFlow", "Apache OpenNLP", "GitHub Copilot", "Claude Opus 4.6", "Wibey"],
+  Testing: ["RTL / React Testing Library", "Jest", "Enzyme", "JUnit", "Playwright", "TestCafe", "WCAG 2.1", "NVDA / VoiceOver", "SonarQube"],
+  DevOps: ["AWS", "CI/CD", "Docker", "Kubernetes", "NGINX", "Jenkins", "GitHub Actions", "Git", "TFS", "Bitbucket", "ESLint", "npm", "Webpack"],
+  "Platforms & Methods": ["Windows", "Linux", "Test Driven Development", "Waterfall", "Agile", "Scrum"],
 };
+const featuredSkills = new Set(["React", "Node.js", "Elasticsearch", "GitHub Copilot", "Jest", "CI/CD", "Test Driven Development"]);
 
 type SkillGroup = keyof typeof skillGroups;
 const groupNames = Object.keys(skillGroups) as SkillGroup[];
-const featuredTechnologies = ["React", "Next.js", "Node.js", "Docker", "Java", "Python", "AWS"];
-const remainingTechnologies = Object.values(skillGroups).flat().filter((technology) => !featuredTechnologies.includes(technology));
+const remainingTechnologies = ["Angular", "JavaScript", "TypeScript", "Storybook", "Express.js", "Spring Boot", "FastAPI", "GraphQL", "RabbitMQ", "PostgreSQL", "MongoDB", "Kubernetes", "Jenkins", "GitHub Actions", "Rasa", "TensorFlow", "Playwright", "NGINX", "Elasticsearch", "Strapi Headless CMS", "WordPress"];
 const blogArticles = [
   { title: "React deployments with runtime configuration", href: "https://umasrinivask.medium.com/React-application-deployments-with-runtime-configuration-dd42820e3f50", type: "DEPLOYMENT" },
   { title: "Multi-stage Docker images for React apps", href: "https://umasrinivask.medium.com/build-a-multi-stage-docker-image-for-React-app-to-load-runtime-environment-settings-911517f5f58d", type: "DOCKER" },
@@ -108,30 +110,33 @@ export default function Portfolio() {
   const [openExperience, setOpenExperience] = useState<number | null>(0);
   const [skillGroup, setSkillGroup] = useState<SkillGroup>("Frontend");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [motionPaused, setMotionPaused] = useState(false);
   const project = projects[activeProject];
 
   const moveProject = (direction: number) => setActiveProject((current) => (current + direction + projects.length) % projects.length);
 
   return (
-    <main>
+    <>
+      <a className="skip-link" href="#top">Skip to main content</a>
+      <main>
       <header className="site-header">
         <a className="wordmark" href="#top" aria-label="K. Uma Srinivas, home"><span className="wordmark-mark">K<span>.</span></span><span>UMA SRINIVAS</span></a>
-        <button className="mobile-menu" aria-label={menuOpen ? "Close menu" : "Open menu"} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X size={20} /> : <Menu size={20} />}</button>
-        <nav className={menuOpen ? "nav-links nav-open" : "nav-links"} aria-label="Main navigation">
+        <button className="mobile-menu" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}</button>
+        <nav id="primary-navigation" className={menuOpen ? "nav-links nav-open" : "nav-links"} aria-label="Main navigation">
           <a href="#work" onClick={() => setMenuOpen(false)}>Selected work</a><a href="#about" onClick={() => setMenuOpen(false)}>About</a><a href="#experience" onClick={() => setMenuOpen(false)}>Experience</a><a href="#skills" onClick={() => setMenuOpen(false)}>Toolkit</a>
           <a className="nav-contact" href="mailto:umasrinivas9k@gmail.com">Let&apos;s talk <ArrowUpRight size={15} /></a>
         </nav>
       </header>
 
-      <section className="hero section-wrap" id="top">
+      <section className="hero section-wrap" id="top" tabIndex={-1}>
         <div className="hero-copy">
           <div className="eyebrow"><span className="status-dot" /> UI ENGINEERING · FULL STACK</div>
           <h1>Thoughtful interfaces.<br /><span>Systems that scale.</span></h1>
           <p className="hero-intro">I&apos;m Uma, a UI full stack engineer turning complex products into clear, reliable experiences.</p>
-          <div className="hero-actions"><a className="button button-primary" href="#work">Explore my work <ArrowDown size={16} /></a><a className="text-link" href="mailto:umasrinivas9k@gmail.com"><Mail size={16} /> Get in touch</a></div>
+          <div className="hero-actions"><a className="button button-primary" href="#work">Browse my work <ArrowDown size={16} aria-hidden="true" /></a><a className="text-link" href="mailto:umasrinivas9k@gmail.com"><Mail size={16} aria-hidden="true" /> Get in touch</a></div>
           <div className="hero-meta"><span><Code2 size={14} /> UI · Full Stack</span><span>10 years building for the web</span></div>
         </div>
-        <div className="hero-art" aria-label="Portrait surrounded by interactive technology stars" role="group" onPointerMove={(event) => {
+        <div className={motionPaused ? "hero-art motion-paused" : "hero-art"} aria-label="Portrait surrounded by interactive technology stars" role="group" onPointerMove={(event) => {
           const bounds = event.currentTarget.getBoundingClientRect();
           const x = (event.clientX - bounds.left) / bounds.width - 0.5;
           const y = (event.clientY - bounds.top) / bounds.height - 0.5;
@@ -144,8 +149,9 @@ export default function Portfolio() {
         }} onPointerLeave={(event) => {
           ["--grid-shift-x", "--grid-shift-y", "--orbit-shift-x", "--orbit-shift-y", "--portrait-shift-x", "--portrait-shift-y"].forEach((property) => event.currentTarget.style.setProperty(property, "0px"));
         }}>
+          <button type="button" className="motion-toggle" aria-label={motionPaused ? "Play decorative motion" : "Pause decorative motion"} aria-pressed={motionPaused} title={motionPaused ? "Play decorative motion" : "Pause decorative motion"} onClick={() => setMotionPaused(!motionPaused)}>{motionPaused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}</button>
           <div className="art-grid" />
-          <div className="tech-starfield" aria-label="Additional technology stars">
+          <div className="tech-starfield" role="group" aria-label="Additional technology stars">
             {remainingTechnologies.map((technology, index) => {
               const [left, top] = techStarPositions[index];
               const edgeClass = left < 16 ? "tech-star-left" : left > 84 ? "tech-star-right" : "";
@@ -153,14 +159,14 @@ export default function Portfolio() {
               return <button key={technology} type="button" className={`tech-star ${edgeClass} ${verticalClass}`} style={{ left: `${left}%`, top: `${top}%` }} aria-label={technology} data-tech={technology} />;
             })}
           </div>
-          <div className="profile-planets" aria-label="External profiles">
-            <div className="jupiter-system" aria-label="Code profile with orbiting particles">
-              <div className="jupiter-granules jupiter-granules-outer" aria-hidden="true">{Array.from({ length: 44 }, (_, index) => { const angle = index * 2.39996; const wobble = ((index * 37) % 17) / 17; const radiusX = 43 + wobble * 13; const radiusY = 41 + ((index * 23) % 19) / 19 * 13; const size = .8 + ((index * 11) % 13) / 13 * 1.5; return <i key={index} style={{ left: `${50 + Math.cos(angle) * radiusX}%`, top: `${50 + Math.sin(angle) * radiusY}%`, width: size, height: size }} />; })}</div>
-              <div className="jupiter-granules jupiter-granules-inner" aria-hidden="true">{Array.from({ length: 32 }, (_, index) => { const angle = index * 2.39996 + .6; const wobble = ((index * 29) % 15) / 15; const radiusX = 42 + wobble * 12; const radiusY = 40 + ((index * 17) % 17) / 17 * 12; const size = .8 + ((index * 7) % 11) / 11 * 1.4; return <i key={index} style={{ left: `${50 + Math.cos(angle) * radiusX}%`, top: `${50 + Math.sin(angle) * radiusY}%`, width: size, height: size }} />; })}</div>
+          <div className="profile-planets" role="group" aria-label="External profiles">
+            <div className="jupiter-system" role="group" aria-label="GitHub profile with orbiting particles">
+              <div className="jupiter-granules jupiter-granules-outer" aria-hidden="true">{Array.from({ length: 44 }, (_, index) => { const angle = index * 2.39996; const wobble = ((index * 37) % 17) / 17; const radiusX = 43 + wobble * 13; const radiusY = 41 + ((index * 23) % 19) / 19 * 13; const left = (50 + Math.cos(angle) * radiusX).toFixed(3); const top = (50 + Math.sin(angle) * radiusY).toFixed(3); const size = (.8 + ((index * 11) % 13) / 13 * 1.5).toFixed(2); return <i key={index} style={{ left: `${left}%`, top: `${top}%`, width: `${size}px`, height: `${size}px` }} />; })}</div>
+              <div className="jupiter-granules jupiter-granules-inner" aria-hidden="true">{Array.from({ length: 32 }, (_, index) => { const angle = index * 2.39996 + .6; const wobble = ((index * 29) % 15) / 15; const radiusX = 42 + wobble * 12; const radiusY = 40 + ((index * 17) % 17) / 17 * 12; const left = (50 + Math.cos(angle) * radiusX).toFixed(3); const top = (50 + Math.sin(angle) * radiusY).toFixed(3); const size = (.8 + ((index * 7) % 11) / 11 * 1.4).toFixed(2); return <i key={index} style={{ left: `${left}%`, top: `${top}%`, width: `${size}px`, height: `${size}px` }} />; })}</div>
               <a className="profile-planet profile-planet-code" href="https://github.com/KattulaUmaSrinivas9" target="_blank" rel="noreferrer" aria-label="GitHub" />
             </div>
             <a className="profile-planet profile-planet-network" href="https://www.linkedin.com/feed/update/urn:li:activity:6713165668218499072" target="_blank" rel="noreferrer" aria-label="LinkedIn" />
-            <div className="writing-planet-system" aria-label="Writing planet with four orbiting articles">
+            <div className="writing-planet-system" role="group" aria-label="Writing profile with four orbiting articles">
               <div className="blog-orbit">
                 {blogArticles.map((article, index) => <a key={article.href} className={`blog-moon blog-moon-${index + 1}`} href={article.href} target="_blank" rel="noreferrer" aria-label={article.title} title={article.title} />)}
               </div>
@@ -173,13 +179,13 @@ export default function Portfolio() {
           <div className="orbit orbit-two" role="group" aria-label="More featured technologies">
             <span className="orbit-tech orbit-tech-four"><span>Applied AI</span></span><span className="orbit-tech orbit-tech-five"><span>AWS</span></span><span className="orbit-tech orbit-tech-six"><span>Java</span></span><span className="orbit-tech orbit-tech-eight"><span>Python</span></span>
           </div>
-          <div className="portrait-frame"><Image src="/photo.png" alt="" width={220} height={220} priority className="portrait-image" /></div>
+          <div className="portrait-frame"><Image src="/photo.png" alt="Portrait of K. Uma Srinivas" width={220} height={220} priority className="portrait-image" /></div>
         </div>
         <div className="hero-bottom"><span><span className="hero-specialty-highlight">FRONTEND × FULL STACK × PRODUCT THINKING × APPLIED AI</span></span><a href="#about" aria-label="Scroll to about"><ArrowDown size={16} /></a><span>SCROLL TO EXPLORE</span></div>
       </section>
 
       <section className="section-wrap work-section" id="work">
-        <div className="section-heading"><div><div className="eyebrow">A FEW THINGS I&apos;VE HELPED SHIP</div><h2>Selected work<span className="heading-period">.</span></h2></div><p>Product stories across retail and e-commerce, sports betting, energy, SaaS, and education—told through the decisions and details behind the UI.</p></div>
+        <div className="section-heading"><div><div className="eyebrow">PRODUCTS, PLATFORMS &amp; EXPERIENCES</div><h2>What I&apos;ve helped build<span className="heading-period">.</span></h2></div><p>Product stories across retail and e-commerce, sports betting, energy, SaaS, and education—told through the decisions and details behind the UI.</p></div>
         <div className={`project-feature accent-${project.accent}`}>
           <div className="project-index-panel">
             <span className="project-index-number">{project.number}</span>
@@ -190,23 +196,25 @@ export default function Portfolio() {
           <div className="project-info">
             <div className="project-summary-label"><span className="status-dot" /> CASE STUDY</div>
             <p className="project-description">{project.description}</p>
-            <div className="project-contribution"><span className="contribution-label">WHAT I CONTRIBUTED</span><ul>{project.work.map((item) => <li key={item}><Check size={15} />{item}</li>)}</ul></div>
+            <div className="project-contribution"><span className="contribution-label">WHAT I CONTRIBUTED</span><ul>{project.work.map((item) => <li key={item}><Check size={15} aria-hidden="true" />{item}</li>)}</ul></div>
             <div className="project-link-actions">{project.links.length > 0 ? project.links.map((link) => <a key={link.href} href={link.href} target="_blank" rel="noreferrer">{link.label}<ArrowUpRight size={14} /></a>) : <span className="project-confidential"><strong>INTERNAL TOOL · CONFIDENTIAL</strong><small>Details are kept high level.</small></span>}</div>
-            <div className="project-controls"><span className="project-current">STORY 0{activeProject + 1} OF 0{projects.length}</span><div className="arrow-controls"><button onClick={() => moveProject(-1)} aria-label="Previous project"><ArrowLeft size={17} /></button><button onClick={() => moveProject(1)} aria-label="Next project"><ArrowRight size={17} /></button></div></div>
+            <div className="project-controls"><span className="project-current">STORY 0{activeProject + 1} OF 0{projects.length}</span><div className="arrow-controls"><button type="button" onClick={() => moveProject(-1)} aria-label="Previous project"><ArrowLeft size={17} aria-hidden="true" /></button><button type="button" onClick={() => moveProject(1)} aria-label="Next project"><ArrowRight size={17} aria-hidden="true" /></button></div></div>
           </div>
         </div>
-        <div className="project-selector" aria-label="Choose a project">{projects.map((item, index) => <button key={item.number} onClick={() => setActiveProject(index)} className={activeProject === index ? "selector-item selector-active" : "selector-item"} aria-current={activeProject === index ? "true" : undefined}><span className="selector-number">{item.number}</span><span className="selector-text"><strong>{item.title}</strong><small>{item.category}</small></span><ArrowUpRight size={15} /></button>)}</div>
+        <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">Project {activeProject + 1} of {projects.length}: {project.title}</p>
+        <div className="project-selector" role="group" aria-label="Choose a project">{projects.map((item, index) => <button type="button" key={item.number} onClick={() => setActiveProject(index)} className={activeProject === index ? "selector-item selector-active" : "selector-item"} aria-pressed={activeProject === index}><span className="selector-number">{item.number}</span><span className="selector-text"><strong>{item.title}</strong><small>{item.category}</small></span><ArrowUpRight size={15} aria-hidden="true" /></button>)}</div>
       </section>
 
-      <section className="about-section" id="about"><div className="section-wrap about-grid"><div className="about-aside"><div className="eyebrow">A LITTLE ABOUT HOW I WORK</div><div className="about-stamp"><Code2 size={32} /><span>HUMAN FIRST<br />SYSTEMS MINDED</span></div><div className="about-aside-note">From the first sketch to the production dashboard, I enjoy the whole path from problem to shipped product.</div></div><div className="about-copy"><h2>Curious by default.<br /><span>Practical by design.</span></h2><p className="about-lead">For 10 years, I&apos;ve worked across the full product journey—from shaping an idea and building its interface to connecting services and making releases dependable.</p><p>I like the hard middle: untangling a complex workflow, finding the simplest useful shape, and making sure the result works for more people and more devices. I bring a systems mindset to UI work, and a care for detail to the systems behind it.</p><div className="about-facts"><div><strong>10<span>+</span></strong><small>YEARS IN SOFTWARE</small></div><div><strong>5</strong><small>INDUSTRIES</small></div><div><strong>12<span>+</span></strong><small>APPS &amp; PROJECTS DELIVERED</small></div></div><div className="credentials"><span>AWS CERTIFIED DEVELOPER — ASSOCIATE</span><span>APOLLO CERTIFIED DEVELOPER</span></div></div></div></section>
+      <section className="about-section" id="about"><div className="section-wrap about-grid"><div className="about-aside"><div className="eyebrow">A LITTLE ABOUT HOW I WORK</div><div className="about-stamp"><Code2 size={32} aria-hidden="true" /><span>HUMAN FIRST<br />SYSTEMS MINDED</span></div><div className="about-aside-note">From the first sketch to the production dashboard, I enjoy the whole path from problem to shipped product.</div></div><div className="about-copy"><h2>Curious by default.<br /><span>Practical by design.</span></h2><p className="about-lead">For 10 years, I&apos;ve worked across the full product journey—from shaping an idea and building its interface to connecting services and making releases dependable.</p><p>I like the hard middle: untangling a complex workflow, finding the simplest useful shape, and making sure the result works for more people and more devices. I bring a systems mindset to UI work, and a care for detail to the systems behind it.</p><div className="about-facts"><div><strong>10<span>+</span></strong><small>YEARS IN SOFTWARE</small></div><div><strong>5</strong><small>INDUSTRIES</small></div><div><strong>12<span>+</span></strong><small>APPS &amp; PROJECTS DELIVERED</small></div></div><div className="credentials"><span>AWS CERTIFIED DEVELOPER — ASSOCIATE</span><span>APOLLO CERTIFIED DEVELOPER</span></div></div></div></section>
 
-      <section className="section-wrap experience-section" id="experience"><div className="section-heading"><div><div className="eyebrow">WHERE I&apos;VE BEEN</div><h2>Experience<span className="heading-period">.</span></h2></div><p>Growing from cross-platform product work into full-stack experiences and large-scale retail products.</p></div><div className="timeline">{experience.map((item, index) => <article className={openExperience === index ? "experience-item experience-open" : "experience-item"} key={item.company}><span className="timeline-marker">0{index + 1}</span><button className="experience-toggle" onClick={() => setOpenExperience(openExperience === index ? null : index)} aria-expanded={openExperience === index}><span className="experience-years">{item.years}</span><span className="experience-main"><strong>{item.company}</strong><span>{item.role}</span></span><span className="experience-focus">{item.focus}</span><span className="experience-chevron"><ChevronDown size={18} /></span></button>{openExperience === index && <div className="experience-details"><ul>{item.highlights.map((highlight) => <li key={highlight}>{highlight}</li>)}</ul></div>}</article>)}</div></section>
+      <section className="section-wrap experience-section" id="experience"><div className="section-heading"><div><div className="eyebrow">WHERE I&apos;VE BEEN</div><h2>Experience<span className="heading-period">.</span></h2></div><p>Growing from cross-platform product work into full-stack experiences and large-scale retail products.</p></div><div className="timeline">{experience.map((item, index) => <article className={openExperience === index ? "experience-item experience-open" : "experience-item"} key={item.company}><span className="timeline-marker">0{index + 1}</span><button id={`experience-toggle-${index}`} className="experience-toggle" onClick={() => setOpenExperience(openExperience === index ? null : index)} aria-expanded={openExperience === index} aria-controls={`experience-panel-${index}`}><span className="experience-years">{item.years}</span><span className="experience-main"><strong>{item.company}</strong><span>{item.role}</span></span><span className="experience-focus">{item.focus}</span><span className="experience-chevron"><ChevronDown size={18} aria-hidden="true" /></span></button><div id={`experience-panel-${index}`} className="experience-details" role="region" aria-labelledby={`experience-toggle-${index}`} hidden={openExperience !== index}><ul>{item.highlights.map((highlight) => <li key={highlight}>{highlight}</li>)}</ul></div></article>)}</div></section>
 
-      <section className="skills-section" id="skills"><div className="section-wrap skills-layout"><div className="skills-intro"><div className="eyebrow">THE TOOLS ARE ONLY PART OF IT</div><h2>A flexible<br /><span>toolkit.</span></h2><p>Pick a lane to explore the technologies and practices I reach for most.</p><div className="skill-categories" role="tablist" aria-label="Skill categories">{groupNames.map((group) => <button key={group} role="tab" aria-selected={skillGroup === group} className={skillGroup === group ? "skill-tab skill-tab-active" : "skill-tab"} onClick={() => setSkillGroup(group)}>{group}<ArrowUpRight size={13} /></button>)}</div></div><div className="skills-panel"><div className="skills-panel-top"><span><Layers3 size={16} /> {skillGroup}</span><span>0{groupNames.indexOf(skillGroup) + 1} / 0{groupNames.length}</span></div><div className="skills-cloud" role="tabpanel">{skillGroups[skillGroup].map((skill, index) => <span key={skill} className={index === 0 ? "skill-pill skill-pill-featured" : "skill-pill"}>{skill}{index === 0 && <Sparkles size={13} />}</span>)}</div><div className="skills-note"><span className="status-dot" /> ALWAYS LEARNING, ALWAYS SHIPPING</div></div></div></section>
+      <section className="skills-section" id="skills"><div className="section-wrap skills-layout"><div className="skills-intro"><div className="eyebrow">TOOLS &amp; TECHNOLOGIES</div><h2>How I build<br /><span>across the stack.</span></h2><p>Explore the tools and practices I use across frontend, backend, AI, cloud, data, testing, and delivery.</p><div className="skill-categories" role="group" aria-label="Filter skills by category">{groupNames.map((group) => <button type="button" key={group} aria-pressed={skillGroup === group} className={skillGroup === group ? "skill-tab skill-tab-active" : "skill-tab"} onClick={() => setSkillGroup(group)}>{group}<ArrowUpRight size={13} aria-hidden="true" /></button>)}</div></div><div className="skills-panel" role="region" aria-label={`${skillGroup} skills`} aria-live="polite"><div className="skills-panel-top"><span><Layers3 size={16} aria-hidden="true" /> {skillGroup}</span><span>0{groupNames.indexOf(skillGroup) + 1} / 0{groupNames.length}</span></div><div className="skills-cloud">{skillGroups[skillGroup].map((skill) => <span key={skill} className={featuredSkills.has(skill) ? "skill-pill skill-pill-featured" : "skill-pill"}>{skill}{featuredSkills.has(skill) && <Sparkles size={13} aria-hidden="true" />}</span>)}</div><div className="skills-note"><span className="status-dot" /> ALWAYS LEARNING, ALWAYS SHIPPING</div></div></div></section>
 
       <section className="writing-section section-wrap"><div className="section-heading"><div><div className="eyebrow">NOTES FROM THE BUILD</div><h2>Writing &amp; community<span className="heading-period">.</span></h2></div><p>Practical notes on shipping, deployment, and the infrastructure that supports great product experiences.</p></div><div className="writing-list">{blogArticles.map((article, index) => <a key={article.href} href={article.href} target="_blank" rel="noreferrer"><span className="writing-number">0{index + 1}</span><span className="writing-title">{article.title}</span><span className="writing-type">{article.type}</span><ArrowUpRight size={17} /></a>)}</div></section>
 
-      <footer className="footer"><div className="section-wrap"><div className="footer-cta"><div><div className="eyebrow">HAVE A GOOD PROBLEM TO SOLVE?</div><h2>Let&apos;s make it<br /><span>make sense.</span></h2></div><div className="footer-contact-links"><a className="footer-email" href="mailto:umasrinivas9k@gmail.com">umasrinivas9k@gmail.com <ArrowUpRight size={20} /></a><a className="footer-phone" href="tel:+14795608479">+1 (479) 560-8479</a></div></div><div className="footer-bottom"><a className="wordmark" href="#top" aria-label="K. Uma Srinivas, home"><span className="wordmark-mark">K<span>.</span></span><span>UMA SRINIVAS</span></a><span>UI FULL STACK ENGINEER · 2026</span><div><a href="https://github.com/KattulaUmaSrinivas9" target="_blank" rel="noreferrer">CODE <ArrowUpRight size={12} /></a><a href="https://www.linkedin.com/feed/update/urn:li:activity:6713165668218499072" target="_blank" rel="noreferrer">PROFILE <ArrowUpRight size={12} /></a></div></div></div></footer>
-    </main>
+      <footer className="footer"><div className="section-wrap"><div className="footer-cta"><div><div className="eyebrow">HAVE A GOOD PROBLEM TO SOLVE?</div><h2>Let&apos;s make it<br /><span>make sense.</span></h2></div><div className="footer-contact-links"><a className="footer-email" href="mailto:umasrinivas9k@gmail.com">umasrinivas9k@gmail.com <ArrowUpRight size={20} /></a></div></div><div className="footer-bottom"><a className="wordmark" href="#top" aria-label="K. Uma Srinivas, home"><span className="wordmark-mark">K<span>.</span></span><span>UMA SRINIVAS</span></a><span>UI FULL STACK ENGINEER · 2026</span><div><a href="https://github.com/KattulaUmaSrinivas9" target="_blank" rel="noreferrer">CODE <ArrowUpRight size={12} /></a><a href="https://www.linkedin.com/feed/update/urn:li:activity:6713165668218499072" target="_blank" rel="noreferrer">PROFILE <ArrowUpRight size={12} /></a></div></div></div></footer>
+      </main>
+    </>
   );
 }
