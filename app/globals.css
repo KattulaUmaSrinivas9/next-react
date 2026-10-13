@@ -144,6 +144,7 @@ h1 span, .about-copy h2 span, .skills-intro h2 span, .footer-cta h2 span { color
 .project-link-actions a, .arrow-controls button, .hero-bottom a, .nav-contact { border-color: #77827c; }
 .selector-item { color: #56615c; }
 .skill-tab { border-color: #77827c; }
+.skill-tab.skill-tab-active { background: var(--ink); color: #fff; border-color: var(--ink); }
 .project-index-number { color: #68746d; }
 .accent-mint .project-index-number { color: #587662; }.accent-lilac .project-index-number { color: #6c627e; }.accent-blue .project-index-number { color: #4e717b; }.accent-gold .project-index-number { color: #806b3f; }
 .hero-bottom { height: auto; min-height: 48px; }
