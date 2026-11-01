@@ -10,9 +10,18 @@ import styles from "./chatbot.module.css";
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
+  const [userId, setUserId] = useState<string | null>(null);
   const connectionRef = useRef<ReturnType<typeof connectChatSocket> | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
-    { id: 1, role: "assistant", type: "text", content: "Hi! How can I help you today?" },
+    {
+      id: 1,
+      role: "assistant",
+      type: "form",
+      purpose: "login",
+      title: "Sign in to chat",
+      description: "Choose a username. Use the shared demo password to continue.",
+      submitLabel: "Sign in",
+    },
   ]);
 
   const appendMessage = useCallback((response: AssistantResponse, role: MessageRole) => {
@@ -23,6 +32,24 @@ export default function Chatbot() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/session", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((session: { authenticated?: boolean; userId?: string | null }) => {
+        if (cancelled || !session.authenticated || !session.userId) return;
+        setUserId(session.userId);
+        setMessages([{ id: 1, role: "assistant", type: "text", content: `Welcome back, ${session.userId}. How can I help?` }]);
+      })
+      .catch((error: unknown) => console.error("Could not restore chat session:", error));
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!userId) {
+      setConnectionStatus("disconnected");
+      return;
+    }
+
     const connection = connectChatSocket({
       onStatusChange: setConnectionStatus,
       onEvent: (event) => {
@@ -38,7 +65,36 @@ export default function Chatbot() {
       connection.close();
       connectionRef.current = null;
     };
-  }, [appendMessage]);
+  }, [appendMessage, userId]);
+
+  async function signIn(credentials: { username: string; password: string }) {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    });
+    const result = await response.json() as { userId?: string; error?: string };
+    if (!response.ok || !result.userId) throw new Error(result.error ?? "Sign in failed.");
+
+    setUserId(result.userId);
+    setMessages([{ id: 1, role: "assistant", type: "text", content: `Welcome, ${result.userId}. Ask for a chart or table.` }]);
+  }
+
+  async function signOut() {
+    await fetch("/api/auth/session", { method: "DELETE" });
+    connectionRef.current?.close();
+    connectionRef.current = null;
+    setUserId(null);
+    setMessages([{
+      id: 1,
+      role: "assistant",
+      type: "form",
+      purpose: "login",
+      title: "Sign in to chat",
+      description: "Choose a username. Use the shared demo password to continue.",
+      submitLabel: "Sign in",
+    }]);
+  }
 
   function sendMessage(content: string) {
     const payload: ChatMessageRequest = { messageId: crypto.randomUUID(), text: content };
@@ -53,11 +109,12 @@ export default function Chatbot() {
   return (
     <section className={styles.chatWindow} aria-label="AI Assistant chat">
       <header className={styles.header}>
-        <div><h2>AI Assistant</h2><p>{connectionStatus === "connected" ? "Connected" : connectionStatus === "connecting" ? "Connecting…" : "Disconnected"}</p></div>
+        <div><h2>AI Assistant</h2><p>{userId ? `${userId} · ${connectionStatus === "connected" ? "Connected" : connectionStatus === "connecting" ? "Connecting…" : "Disconnected"}` : "Sign in to connect"}</p></div>
+        {userId && <button type="button" className={styles.signOutButton} onClick={() => void signOut()}>Sign out</button>}
         <button type="button" className={styles.closeButton} onClick={() => setIsOpen(false)} aria-label="Close chatbot">×</button>
       </header>
-      <MessageList messages={messages} />
-      <MessageComposer onSend={sendMessage} disabled={connectionStatus !== "connected"} />
+      <MessageList messages={messages} onLoginSubmit={signIn} />
+      {userId && <MessageComposer onSend={sendMessage} disabled={connectionStatus !== "connected"} />}
     </section>
   );
 }

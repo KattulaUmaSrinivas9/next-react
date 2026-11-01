@@ -6,6 +6,7 @@ export type TableRow = Record<string, string | number>;
 
 export type AssistantResponse =
   | { type: "text"; content: string }
+  | { type: "form"; purpose: "login"; title: string; description?: string; submitLabel: string }
   | { type: "image"; src: string; alt: string; caption?: string }
   | { type: "video"; src: string; caption?: string }
   | { type: "chart"; title: string; chartType: "bar" | "line" | "pie"; data: ChartPoint[]; xKey: string; series: ChartSeries[] }
@@ -14,7 +15,7 @@ export type AssistantResponse =
 export type ChatMessageRequest = { messageId: string; text: string };
 export type ChatSocketEvent =
   | { type: "chat:ack"; messageId: string; accepted: boolean; error?: string }
-  | { type: "chat:response"; response: AssistantResponse };
+  | { type: "chat:response"; messageId?: string; response: AssistantResponse };
 
 export type MessageType = AssistantResponse["type"];
 export type ChatMessage = AssistantResponse & { id: number; role: MessageRole };

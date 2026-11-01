@@ -43,6 +43,7 @@
 .header h2 { margin: 0; font-size: 15px; }
 .header p { margin: 4px 0 0; color: #647084; font-size: 12px; }
 .closeButton { border: 0; background: transparent; color: #39465b; font-size: 22px; cursor: pointer; }
+.signOutButton { margin-left: auto; border: 0; background: transparent; color: #2867d8; font-size: 12px; cursor: pointer; }
 
 .messageList {
   display: flex;
@@ -61,6 +62,13 @@
 .richBubble { width: 100%; max-width: 100%; }
 .plainText { margin: 0; white-space: pre-wrap; }
 .typeBadge { display: inline-block; margin-bottom: 6px; color: #647084; font-size: 11px; text-transform: capitalize; }
+.loginFormMessage { display: grid; gap: 6px; }
+.loginFormMessage > p { margin: 0; color: #647084; }
+.loginForm { display: grid; gap: 10px; margin-top: 6px; }
+.loginForm label { display: grid; gap: 4px; color: #39465b; font-size: 12px; }
+.loginForm input { width: 100%; box-sizing: border-box; border: 1px solid #ccd2dc; border-radius: 5px; padding: 8px; font: inherit; }
+.loginForm .sendButton { min-height: 34px; }
+.formError { margin: 0; color: #b42318; font-size: 12px; }
 
 .mediaFigure { margin: 0; }
 .mediaFigure img,

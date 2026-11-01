@@ -28,6 +28,11 @@
       ]
     }
   },
+  "ts-node": {
+    "esm": true,
+    "transpileOnly": true,
+    "experimentalResolver": true
+  },
   "include": [
     "next-env.d.ts",
     "**/*.ts",

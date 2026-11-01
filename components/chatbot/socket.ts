@@ -23,6 +23,8 @@ export function connectChatSocket(callbacks: Callbacks) {
   const socket: Socket = io({
     path: "/api/socket-io",
     addTrailingSlash: false,
+    withCredentials: true,
+    // Vercel Functions support Socket.IO over WebSocket, not HTTP long-polling.
     transports: ["websocket"],
     reconnection: true,
     reconnectionDelay: 1000,
@@ -32,7 +34,12 @@ export function connectChatSocket(callbacks: Callbacks) {
   socket.on("connect", () => callbacks.onStatusChange("connected"));
   socket.on("disconnect", () => callbacks.onStatusChange("disconnected"));
   socket.on("connect_error", (error) => {
-    console.error("Chat socket connection failed:", error.message);
+    const details = error as Error & { description?: unknown; context?: unknown };
+    console.error("Chat socket connection failed:", {
+      message: details.message,
+      description: details.description,
+      context: details.context,
+    });
     callbacks.onStatusChange("disconnected");
   });
   socket.on("chat:ack", (payload: unknown) => {

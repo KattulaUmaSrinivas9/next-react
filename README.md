@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Chat demo setup
+
+Set `CHAT_DEMO_PASSWORD`, `CHAT_SESSION_SECRET`, `CHAT_QUEUE_REGION`, and `NEXT_CHAT_CALLBACK_SECRET` in `.env.local` and in the Vercel project environment settings. The login form accepts any username with the shared demo password; usernames are normalized to lowercase and used as the queue `userId`. This is demo authentication, not separate per-user identity.
+
+After login, the Next.js Socket.IO backend publishes messages to the Vercel Queues topic `chat-messages`. The separate FastAPI worker consumes them and posts its response to `/api/chat/results`; Next pushes the response to the user's Socket.IO room. Local development can emit directly through the single Node server. Vercel needs `REDIS_URL` so the callback function can reach the Function instance holding the socket. The Python worker currently returns demo text/chart/table data. The AI and SQL service call is a placeholder for later implementation.
+
+For local queue publishing and consumption, use a Vercel-linked project with queue credentials available in the local environment. The Next app and Python worker must use the same `CHAT_QUEUE_REGION` and `NEXT_CHAT_CALLBACK_SECRET`. Set `VERCEL_QUEUE_TOKEN` in the worker environment. Point `NEXT_API_BASE_URL` at the Next.js deployment (or local server). Configure Redis through the Vercel Marketplace and set `REDIS_URL` for the Next.js deployment to enable cross-instance socket delivery.
+
+Queued input messages use Vercel Queues retention; this project does not store chat history.
+
 ## Getting Started
 
 First, run the development server:

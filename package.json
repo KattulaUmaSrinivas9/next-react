@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node server.cjs",
+    "dev": "node --loader ts-node/esm server.ts",
     "build": "next build",
-    "start": "node -e \"process.env.NODE_ENV='production'; require('./server.cjs')\"",
+    "start": "node --loader ts-node/esm -e \"process.env.NODE_ENV='production'; import('./server.ts')\"",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
@@ -14,11 +14,13 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@vercel/queue": "^0.10.0",
     "lucide-react": "^1.55.0",
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1",
+    "redis": "^6.3.1",
     "socket.io": "^4.8.4",
     "socket.io-client": "^4.8.4"
   },
