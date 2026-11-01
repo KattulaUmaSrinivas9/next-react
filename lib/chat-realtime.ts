@@ -1,4 +1,4 @@
-import { createClient } from "redis";
+import { createClient, type RedisClientType } from "redis";
 import type { Server } from "socket.io";
 import type { AssistantResponse } from "../components/chatbot/types";
 
@@ -10,7 +10,7 @@ type ChatResponseEvent = {
 
 const responseChannel = "chat:responses";
 const subscribers = new WeakMap<Server, Promise<void>>();
-let publisherReady: Promise<ReturnType<typeof createClient>> | undefined;
+let publisherReady: Promise<RedisClientType> | undefined;
 type ChatSocketGlobal = typeof globalThis & { __chatSocketServer?: Server };
 
 function isChatResponseEvent(value: unknown): value is ChatResponseEvent {
@@ -22,20 +22,21 @@ function isChatResponseEvent(value: unknown): value is ChatResponseEvent {
     && event.response !== null;
 }
 
-async function getPublisher() {
+async function getPublisher(): Promise<RedisClientType> {
   if (publisherReady) return publisherReady;
   const url = process.env.REDIS_URL;
   if (!url) throw new Error("REDIS_URL is required for socket response delivery on Vercel.");
 
-  publisherReady = (async () => {
+  const pending = (async () => {
     const client = createClient({ url });
     client.on("error", (error) => console.error("Chat Redis publisher error:", error));
     await client.connect();
     return client;
   })();
+  publisherReady = pending;
 
   try {
-    return await publisherReady;
+    return await pending;
   } catch (error) {
     publisherReady = undefined;
     throw error;

@@ -45,10 +45,7 @@ export default function Chatbot() {
   }, []);
 
   useEffect(() => {
-    if (!userId) {
-      setConnectionStatus("disconnected");
-      return;
-    }
+    if (!userId) return;
 
     const connection = connectChatSocket({
       onStatusChange: setConnectionStatus,
@@ -84,6 +81,7 @@ export default function Chatbot() {
     await fetch("/api/auth/session", { method: "DELETE" });
     connectionRef.current?.close();
     connectionRef.current = null;
+    setConnectionStatus("disconnected");
     setUserId(null);
     setMessages([{
       id: 1,
