@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import next from "next";
 import { Server } from "socket.io";
-import { registerChatSocketHandlers } from "./lib/chat-socket";
+import { registerChatSocketHandlers } from "./lib/chat-socket.js";
 
 const portArgumentIndex = process.argv.indexOf("--port");
 const argumentPort = portArgumentIndex >= 0 ? process.argv[portArgumentIndex + 1] : undefined;

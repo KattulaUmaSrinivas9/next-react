@@ -23,7 +23,7 @@ export function connectChatSocket(callbacks: Callbacks) {
   const socket: Socket = io({
     path: "/api/socket-io",
     addTrailingSlash: false,
-    transports: ["polling", "websocket"],
+    transports: ["websocket"],
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 30000,
@@ -31,7 +31,10 @@ export function connectChatSocket(callbacks: Callbacks) {
 
   socket.on("connect", () => callbacks.onStatusChange("connected"));
   socket.on("disconnect", () => callbacks.onStatusChange("disconnected"));
-  socket.on("connect_error", () => callbacks.onStatusChange("disconnected"));
+  socket.on("connect_error", (error) => {
+    console.error("Chat socket connection failed:", error.message);
+    callbacks.onStatusChange("disconnected");
+  });
   socket.on("chat:ack", (payload: unknown) => {
     const event = { type: "chat:ack", ...payload as object };
     if (isChatSocketEvent(event)) callbacks.onEvent(event);

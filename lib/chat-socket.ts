@@ -1,6 +1,6 @@
 import type { Server, Socket } from "socket.io";
 import type { ChatMessageRequest } from "../components/chatbot/types";
-import { getDemoResponse } from "../components/chatbot/utils/demo-response";
+import { getDemoResponse } from "../components/chatbot/utils/demo-response.js";
 
 type ChatAck = { messageId: string; accepted: boolean; error?: string };
 

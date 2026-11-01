@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { Server } from "socket.io";
-import { registerChatSocketHandlers } from "../lib/chat-socket";
+import { registerChatSocketHandlers } from "../lib/chat-socket.js";
 
 const httpServer = createServer();
 const io = new Server(httpServer, {

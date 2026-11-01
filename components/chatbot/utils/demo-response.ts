@@ -1,4 +1,4 @@
-import { sampleAssistantResponses } from "../sample-responses";
+import { sampleAssistantResponses } from "../sample-responses.js";
 import type { AssistantResponse } from "../types";
 
 export function getDemoResponse(query: string): AssistantResponse {
