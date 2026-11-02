@@ -2,11 +2,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Chat demo setup
 
-Set `CHAT_DEMO_PASSWORD`, `CHAT_SESSION_SECRET`, `CHAT_QUEUE_REGION`, and `NEXT_CHAT_CALLBACK_SECRET` in `.env.local` and in the Vercel project environment settings. The login form accepts any username with the shared demo password; usernames are normalized to lowercase and used as the queue `userId`. This is demo authentication, not separate per-user identity.
+Set `CHAT_DEMO_PASSWORD`, `CHAT_SESSION_SECRET`, `CHAT_QUEUE_REGION`, `NEXT_CHAT_CALLBACK_SECRET`, `NEXT_API_BASE_URL`, and `REDIS_URL` in `.env.local` as applicable and in the shared Vercel Production environment. `NEXT_API_BASE_URL` must be the deployed app URL without a trailing slash; both app and worker use the same project settings. The login form accepts any username with the shared demo password; usernames are normalized to lowercase and used as the queue `userId`. This is demo authentication, not separate per-user identity.
 
-After login, the Next.js Socket.IO backend publishes messages to the Vercel Queues topic `chat-messages`. The separate FastAPI worker consumes them and posts its response to `/api/chat/results`; Next pushes the response to the user's Socket.IO room. Local development can emit directly through the single Node server. Vercel needs `REDIS_URL` so the callback function can reach the Function instance holding the socket. The Python worker currently returns demo text/chart/table data. The AI and SQL service call is a placeholder for later implementation.
+After login, the Next.js Socket.IO backend publishes messages to the Vercel Queues topic `chat-messages`. The Python daemon in `python-worker/` consumes them and posts its response to `/api/chat/results`; Next pushes the response to the user's Socket.IO room. Both are deployed from this repository as one Vercel project, so the producer and worker share the same Vercel Queues project scope. Local development can emit directly through the single Node server. Vercel needs `REDIS_URL` so the callback function can reach the Function instance holding the socket. The Python worker currently returns demo text/chart/table data. The AI and SQL service call is a placeholder for later implementation.
 
-For local queue publishing and consumption, use a Vercel-linked project with queue credentials available in the local environment. The Next app and Python worker must use the same `CHAT_QUEUE_REGION` and `NEXT_CHAT_CALLBACK_SECRET`. Set `VERCEL_QUEUE_TOKEN` in the worker environment. Point `NEXT_API_BASE_URL` at the Next.js deployment (or local server). Configure Redis through the Vercel Marketplace and set `REDIS_URL` for the Next.js deployment to enable cross-instance socket delivery.
+For local queue publishing and consumption, use the Python Queue devserver as a shared broker; local work then needs no expiring Vercel token or Redis. Follow the local setup in [the Python worker README](python-worker/README.md). Set `VERCEL_QUEUE_BASE_URL=http://127.0.0.1:8111` and `VERCEL_QUEUE_TOKEN=local-token` in both local env files. In Vercel deployments, leave those two variables unset so both apps use the hosted queue and platform credentials. Set `REDIS_URL` in this Vercel project for cross-instance Socket.IO delivery.
 
 Queued input messages use Vercel Queues retention; this project does not store chat history.
 
@@ -44,3 +44,4 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+

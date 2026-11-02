@@ -8,11 +8,15 @@ export type QueuedChatMessage = {
 };
 
 const region = process.env.CHAT_QUEUE_REGION ?? process.env.VERCEL_REGION ?? "iad1";
-// This app's consumer is a separate Python poller. Bypass the Vercel CLI's
-// local push-mode broker so both local Next.js and Python use the same queue.
+const queueBaseUrl = process.env.VERCEL_QUEUE_BASE_URL;
+
+// Local development can point the Node producer and Python poller at the same
+// Vercel Queue devserver. Deployments leave this unset and use the hosted queue.
 const queue = new QueueClient({
   region,
-  resolveBaseUrl: (queueRegion) => new URL(`https://${queueRegion}.vercel-queue.com`),
+  resolveBaseUrl: (queueRegion) => queueBaseUrl
+    ? new URL(queueBaseUrl.replace("{region}", queueRegion))
+    : new URL(`https://${queueRegion}.vercel-queue.com`),
 });
 
 export async function enqueueChatMessage(message: Omit<QueuedChatMessage, "createdAt">) {
