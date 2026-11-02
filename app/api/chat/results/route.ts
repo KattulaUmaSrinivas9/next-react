@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { emitChatResponse } from "../../../../lib/chat-realtime";
-import { logChatError, logChatInfo } from "../../../../lib/chat-log";
+import { logChatError, logChatInfo } from "../../../../lib/chat-log.js";
 import type { AssistantResponse } from "../../../../components/chatbot/types";
 
 export const runtime = "nodejs";

@@ -34,7 +34,6 @@ export async function enqueueChatMessage(message: Omit<QueuedChatMessage, "creat
     });
     logChatInfo("chat.queue.publish_succeeded", {
       messageId: message.messageId,
-      queueMessageId: queueMessageId ?? null,
       topic: "chat-messages",
       region,
     });
