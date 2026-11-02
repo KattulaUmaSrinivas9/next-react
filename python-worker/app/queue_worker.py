@@ -106,9 +106,14 @@ async def poll_chat_messages() -> None:
             "Provide VERCEL_QUEUE_TOKEN or make a Vercel OIDC token or token file available."
         )
 
-    # Vercel sets VERCEL_DEPLOYMENT_ID automatically. Poll every deployment
-    # partition by default; an explicit app setting can pin one partition.
-    deployment = os.getenv("CHAT_QUEUE_DEPLOYMENT_ID") or ALL_DEPLOYMENTS
+    # Vercel Queues publish into the current deployment's partition by default.
+    # In this monorepo, the app and daemon share VERCEL_DEPLOYMENT_ID, so poll
+    # that same partition. Local runs without a deployment ID poll all partitions.
+    deployment = (
+        os.getenv("CHAT_QUEUE_DEPLOYMENT_ID")
+        or os.getenv("VERCEL_DEPLOYMENT_ID")
+        or ALL_DEPLOYMENTS
+    )
     deployment_scope = deployment if isinstance(deployment, str) else "all deployments"
     _log_event(
         "chat.worker.started",
