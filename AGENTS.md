@@ -26,6 +26,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 4. Check Next logs for callback status, `REDIS_URL`, Redis publisher errors, and `Chat Socket.IO Redis subscriber ready.` A Redis publish with zero subscribers fails; ensure the deployed Socket.IO process is alive and subscribed.
 5. `/health` only confirms FastAPI serves HTTP; it does not confirm queue polling is authenticated or healthy.
 6. Never paste, print, commit, or document secret values. Keep `.env*` files untracked; use `.env.example` for variable names only.
+7. Trace production requests with the structured `chat.*` log events and `messageId`. Never log chat text, callback secrets, queue tokens, cookies, or Redis URLs.
 
 
 ### Local queue setup

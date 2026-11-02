@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { emitChatResponse } from "../../../../lib/chat-realtime";
+import { logChatError, logChatInfo } from "../../../../lib/chat-log";
 import type { AssistantResponse } from "../../../../components/chatbot/types";
 
 export const runtime = "nodejs";
@@ -33,6 +34,7 @@ function callbackAuthorized(authorization: string | null) {
 
 export async function POST(request: Request) {
   if (!callbackAuthorized(request.headers.get("authorization"))) {
+    logChatInfo("chat.callback.rejected", { reason: "unauthorized", status: 401 });
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
@@ -40,22 +42,31 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
+    logChatInfo("chat.callback.rejected", { reason: "invalid_json", status: 400 });
     return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
 
   if (typeof body !== "object" || body === null) {
+    logChatInfo("chat.callback.rejected", { reason: "invalid_body", status: 400 });
     return Response.json({ error: "Invalid result." }, { status: 400 });
   }
   const result = body as Record<string, unknown>;
   if (typeof result.userId !== "string" || !result.userId || typeof result.messageId !== "string" || !result.messageId || !isAssistantResponse(result.response)) {
+    logChatInfo("chat.callback.rejected", {
+      messageId: typeof result.messageId === "string" ? result.messageId : undefined,
+      reason: "invalid_result_shape",
+      status: 400,
+    });
     return Response.json({ error: "Result must include userId, messageId, and a supported response." }, { status: 400 });
   }
 
+  logChatInfo("chat.callback.validated", { messageId: result.messageId });
   try {
     await emitChatResponse({ userId: result.userId, messageId: result.messageId, response: result.response });
+    logChatInfo("chat.callback.accepted", { messageId: result.messageId, status: 202 });
     return Response.json({ accepted: true }, { status: 202 });
   } catch (error) {
-    console.error("Failed to publish chat result:", error);
+    logChatError("chat.callback.publish_failed", error, { messageId: result.messageId, status: 503 });
     return Response.json({ error: "Could not publish the chat result." }, { status: 503 });
   }
 }

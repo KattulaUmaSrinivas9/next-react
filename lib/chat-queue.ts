@@ -1,4 +1,5 @@
 import { QueueClient } from "@vercel/queue";
+import { logChatError, logChatInfo } from "./chat-log.js";
 
 export type QueuedChatMessage = {
   messageId: string;
@@ -21,5 +22,29 @@ const queue = new QueueClient({
 
 export async function enqueueChatMessage(message: Omit<QueuedChatMessage, "createdAt">) {
   const payload: QueuedChatMessage = { ...message, createdAt: new Date().toISOString() };
-  return queue.send("chat-messages", payload, { idempotencyKey: message.messageId });
+  logChatInfo("chat.queue.publish_started", {
+    messageId: message.messageId,
+    topic: "chat-messages",
+    region,
+  });
+
+  try {
+    const queueMessageId = await queue.send("chat-messages", payload, {
+      idempotencyKey: message.messageId,
+    });
+    logChatInfo("chat.queue.publish_succeeded", {
+      messageId: message.messageId,
+      queueMessageId: queueMessageId ?? null,
+      topic: "chat-messages",
+      region,
+    });
+    return queueMessageId;
+  } catch (error) {
+    logChatError("chat.queue.publish_failed", error, {
+      messageId: message.messageId,
+      topic: "chat-messages",
+      region,
+    });
+    throw error;
+  }
 }

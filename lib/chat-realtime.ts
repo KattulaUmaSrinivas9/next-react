@@ -1,6 +1,7 @@
 import { createClient, type RedisClientType } from "redis";
 import type { Server } from "socket.io";
 import type { AssistantResponse } from "../components/chatbot/types";
+import { logChatError, logChatInfo } from "./chat-log.js";
 
 type ChatResponseEvent = {
   userId: string;
@@ -29,8 +30,10 @@ async function getPublisher(): Promise<RedisClientType> {
 
   const pending = (async () => {
     const client = createClient({ url });
-    client.on("error", (error) => console.error("Chat Redis publisher error:", error));
+    client.on("error", (error) => logChatError("chat.redis.publisher_error", error));
+    logChatInfo("chat.redis.publisher_connecting");
     await client.connect();
+    logChatInfo("chat.redis.publisher_connected");
     return client;
   })();
   publisherReady = pending;
@@ -57,21 +60,32 @@ export function subscribeToChatResponses(io: Server) {
 
   const setup = (async () => {
     const subscriber = createClient({ url });
-    subscriber.on("error", (error) => console.error("Chat Redis subscriber error:", error));
+    subscriber.on("error", (error) => logChatError("chat.redis.subscriber_error", error));
+    logChatInfo("chat.redis.subscriber_connecting");
     await subscriber.connect();
+    logChatInfo("chat.redis.subscriber_connected");
     await subscriber.subscribe(responseChannel, (payload) => {
       try {
         const event: unknown = JSON.parse(payload);
-        if (!isChatResponseEvent(event)) return;
+        if (!isChatResponseEvent(event)) {
+          logChatInfo("chat.redis.event_rejected", { reason: "invalid_response_payload" });
+          return;
+        }
+        logChatInfo("chat.redis.response_received", { messageId: event.messageId });
         io.to(event.userId).emit("chat:response", {
           messageId: event.messageId,
           response: event.response,
         });
+        logChatInfo("chat.socket.response_emitted", {
+          messageId: event.messageId,
+          source: "redis_subscriber",
+        });
       } catch (error) {
-        console.error("Could not decode chat response event:", error);
+        logChatError("chat.redis.event_decode_failed", error);
       }
     });
-    console.info("Chat Socket.IO Redis subscriber ready.");
+    logChatInfo("chat.redis.subscribed", { channel: responseChannel });
+    logChatInfo("chat.socket.redis_subscriber_ready");
   })();
 
   subscribers.set(io, setup);
@@ -87,11 +101,24 @@ export async function emitChatResponse(event: ChatResponseEvent) {
       messageId: event.messageId,
       response: event.response,
     });
+    logChatInfo("chat.socket.response_emitted", {
+      messageId: event.messageId,
+      source: "local_socket_server",
+    });
     return;
   }
 
   const client = await getPublisher();
+  logChatInfo("chat.redis.publish_started", {
+    messageId: event.messageId,
+    channel: responseChannel,
+  });
   const subscriberCount = await client.publish(responseChannel, JSON.stringify(event));
+  logChatInfo("chat.redis.publish_completed", {
+    messageId: event.messageId,
+    channel: responseChannel,
+    subscriberCount,
+  });
   if (subscriberCount === 0) {
     throw new Error("No Socket.IO Redis subscribers are connected. Restart the Next.js server and keep the chat connected.");
   }

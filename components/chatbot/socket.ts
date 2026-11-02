@@ -44,11 +44,20 @@ export function connectChatSocket(callbacks: Callbacks) {
   });
   socket.on("chat:ack", (payload: unknown) => {
     const event = { type: "chat:ack", ...payload as object };
-    if (isChatSocketEvent(event)) callbacks.onEvent(event);
+    if (isChatSocketEvent(event) && event.type === "chat:ack") {
+      console.info("chat.client.ack_received", {
+        messageId: event.messageId,
+        accepted: event.accepted,
+      });
+      callbacks.onEvent(event);
+    }
   });
   socket.on("chat:response", (payload: unknown) => {
     const event = { type: "chat:response", ...payload as object };
-    if (isChatSocketEvent(event)) callbacks.onEvent(event);
+    if (isChatSocketEvent(event) && event.type === "chat:response") {
+      console.info("chat.client.response_received", { messageId: event.messageId });
+      callbacks.onEvent(event);
+    }
   });
 
   return {

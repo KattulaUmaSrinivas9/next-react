@@ -1,6 +1,8 @@
 import asyncio
+import json
 import logging
 import os
+from urllib.parse import urlsplit
 
 import httpx
 from vercel.queue import ALL_DEPLOYMENTS, QueueClient, subscribe
@@ -10,6 +12,10 @@ from app.response_builder import build_demo_response
 logger = logging.getLogger(__name__)
 
 
+def _log_event(event: str, **fields: object) -> None:
+    logger.info(json.dumps({"event": event, **fields}, separators=(",", ":"), default=str))
+
+
 @subscribe(topic="chat-messages", consumer_group="chat-python-worker")
 async def handle_chat_message(message: dict[str, object]) -> None:
     user_id = message.get("userId")
@@ -17,15 +23,22 @@ async def handle_chat_message(message: dict[str, object]) -> None:
     text = message.get("text")
 
     if not all(isinstance(value, str) and value for value in (user_id, message_id, text)):
+        _log_event(
+            "chat.queue.message_rejected",
+            reason="missing_required_fields",
+            messageId=message_id if isinstance(message_id, str) else None,
+        )
         raise ValueError("Queue message must include userId, messageId, and text.")
 
-    logger.info("Received chat message %s for user %s", message_id, user_id)
+    _log_event("chat.queue.message_received", messageId=message_id)
 
     callback_secret = os.getenv("NEXT_CHAT_CALLBACK_SECRET", "")
     if not callback_secret:
+        _log_event("chat.callback.config_error", messageId=message_id, reason="missing_secret")
         raise RuntimeError("NEXT_CHAT_CALLBACK_SECRET is not configured.")
 
     base_url = os.getenv("NEXT_API_BASE_URL", "http://localhost:3000").rstrip("/")
+    callback_host = urlsplit(base_url).hostname
     result = {
         "userId": user_id,
         "messageId": message_id,
@@ -33,15 +46,46 @@ async def handle_chat_message(message: dict[str, object]) -> None:
     }
 
     # A failed callback raises, leaving the queue message available for retry.
-    async with httpx.AsyncClient(timeout=20) as client:
-        response = await client.post(
-            f"{base_url}/api/chat/results",
-            json=result,
-            headers={"Authorization": f"Bearer {callback_secret}"},
+    _log_event(
+        "chat.callback.request_started",
+        messageId=message_id,
+        callbackHost=callback_host,
+        path="/api/chat/results",
+    )
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.post(
+                f"{base_url}/api/chat/results",
+                json=result,
+                headers={"Authorization": f"Bearer {callback_secret}"},
+            )
+            _log_event(
+                "chat.callback.response_received",
+                messageId=message_id,
+                status=response.status_code,
+            )
+            response.raise_for_status()
+    except Exception:
+        logger.exception(
+            json.dumps({"event": "chat.callback.request_failed", "messageId": message_id})
         )
-        response.raise_for_status()
+        raise
 
-    logger.info("Processed chat message %s for user %s", message_id, user_id)
+    _log_event("chat.queue.handler_completed", messageId=message_id)
+
+
+async def _poll_heartbeat(region: str, deployment_scope: str) -> None:
+    while True:
+        await asyncio.sleep(30)
+        _log_event(
+            "chat.queue.polling_heartbeat",
+            region=region,
+            topic="chat-messages",
+            consumerGroup="chat-python-worker",
+            deploymentScope=deployment_scope,
+            projectId=os.getenv("VERCEL_PROJECT_ID"),
+            deploymentId=os.getenv("VERCEL_DEPLOYMENT_ID"),
+        )
 
 
 async def poll_chat_messages() -> None:
@@ -53,24 +97,49 @@ async def poll_chat_messages() -> None:
         for name in ("VERCEL_QUEUE_TOKEN", "VERCEL_OIDC_TOKEN", "VERCEL_OIDC_TOKEN_FILE")
     )
     if not has_queue_auth:
+        _log_event(
+            "chat.worker.startup_failed",
+            reason="missing_queue_auth",
+            projectId=os.getenv("VERCEL_PROJECT_ID"),
+        )
         raise RuntimeError(
             "Provide VERCEL_QUEUE_TOKEN or make a Vercel OIDC token or token file available."
         )
 
-    # Vercel sets VERCEL_DEPLOYMENT_ID automatically for each deployment. The
-    # worker and Next.js producer are separate projects, so their IDs differ.
-    # Poll all producer partitions unless an operator explicitly pins this
-    # worker with the app-specific CHAT_QUEUE_DEPLOYMENT_ID setting.
+    # Vercel sets VERCEL_DEPLOYMENT_ID automatically. Poll every deployment
+    # partition by default; an explicit app setting can pin one partition.
     deployment = os.getenv("CHAT_QUEUE_DEPLOYMENT_ID") or ALL_DEPLOYMENTS
-    deployment_label = deployment if isinstance(deployment, str) else "all deployments"
-    logger.info("Starting chat queue polling in region %s (%s)", region, deployment_label)
+    deployment_scope = deployment if isinstance(deployment, str) else "all deployments"
+    _log_event(
+        "chat.worker.started",
+        region=region,
+        topic="chat-messages",
+        consumerGroup="chat-python-worker",
+        deploymentScope=deployment_scope,
+        projectId=os.getenv("VERCEL_PROJECT_ID"),
+        deploymentId=os.getenv("VERCEL_DEPLOYMENT_ID"),
+    )
     client = QueueClient(region=region, deployment=deployment)
-    while True:
-        try:
-            await client.poll_and_handle(handle_chat_message, interval=1.0)
-        except asyncio.CancelledError:
-            raise
-        except Exception:
-            logger.exception("Chat queue polling failed; retrying in 5 seconds")
-            await asyncio.sleep(5)
+    heartbeat = asyncio.create_task(_poll_heartbeat(region, deployment_scope))
+    try:
+        while True:
+            try:
+                await client.poll_and_handle(handle_chat_message, interval=1.0)
+                _log_event("chat.queue.poll_loop_returned", region=region)
+                await asyncio.sleep(1)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.exception(
+                    json.dumps({
+                        "event": "chat.queue.poll_failed",
+                        "region": region,
+                        "topic": "chat-messages",
+                        "consumerGroup": "chat-python-worker",
+                    })
+                )
+                await asyncio.sleep(5)
+    finally:
+        heartbeat.cancel()
+        await asyncio.gather(heartbeat, return_exceptions=True)
 
