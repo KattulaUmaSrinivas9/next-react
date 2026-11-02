@@ -1,7 +1,10 @@
 import { createServer } from "node:http";
+import { createRequire } from "node:module";
 import next from "next";
 import { Server } from "socket.io";
-import { registerChatSocketHandlers } from "./lib/chat-socket.js";
+
+const require = createRequire(import.meta.url);
+const { loadEnvConfig } = require("@next/env") as typeof import("@next/env");
 
 const portArgumentIndex = process.argv.indexOf("--port");
 const argumentPort = portArgumentIndex >= 0 ? process.argv[portArgumentIndex + 1] : undefined;
@@ -12,6 +15,10 @@ const app = next({ dev, hostname, port });
 const handleNextRequest = app.getRequestHandler();
 
 async function startServer() {
+  // This is a custom Node server, so load Next's env files before importing
+  // modules that read env vars at module scope (including the queue client).
+  loadEnvConfig(process.cwd(), dev);
+  const { registerChatSocketHandlers } = await import("./lib/chat-socket.js");
   await app.prepare();
 
   const httpServer = createServer((request, response) => {

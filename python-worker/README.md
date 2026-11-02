@@ -1,10 +1,16 @@
 # Chat queue worker
 
-FastAPI serves a local health endpoint, while the production queue consumer runs as a Vercel Daemon. The worker polls Vercel Queue topic `chat-messages`, builds a demo response, and POSTs it to the Next.js callback. Next.js publishes the response through Redis Pub/Sub and delivers it to the browser over Socket.IO.
+FastAPI serves a local health endpoint, while the production queue consumer runs as a Vercel Daemon. The worker polls Vercel Queue topic `chat-messages`, executes pasted read-only SQL against PostgreSQL (or returns a demo response for non-SQL messages), and POSTs the result to the Next.js callback. Next.js publishes the response through Redis Pub/Sub and delivers it to the browser over Socket.IO.
 
 Redis is only used for the response path. It does not deliver incoming messages to Python. The inbound path is Vercel Queues.
 
-The AI and SQL call is intentionally left as a TODO in `app/response_builder.py`.
+Direct SQL is supported now. The query resolver is `app/sql_execution.py`; later, natural-language-to-SQL can be added there before calling the same read-only execution function.
+
+## PostgreSQL queries
+
+Set `DATABASE_URL` to the Neon PostgreSQL connection string in `python-worker/.env` locally and in the monorepo Vercel project's Production environment. The URL should include `sslmode=require`. `NEON_DATABASE_URL` is accepted as an alternate variable name. Do not commit the real connection string.
+
+Send a single `SELECT` or `WITH ... SELECT` statement as the chat message. A Markdown SQL code block is also accepted. Results are returned as a chat table, capped at 500 rows; query execution has a 10-second PostgreSQL statement timeout. Other messages keep using the existing demo behavior. Use a Neon database role with read-only privileges as an additional safeguard.
 
 ## Vercel deployment
 
@@ -21,7 +27,7 @@ Leave `VERCEL_QUEUE_BASE_URL` and `VERCEL_QUEUE_TOKEN` unset in Vercel. `VERCEL_
 
 ## Local development
 
-Copy `.env.example` to `.env`. Set the shared callback secret and `NEXT_API_BASE_URL=http://localhost:3000`.
+Copy `.env.example` to `.env`. Set the shared callback secret, `NEXT_API_BASE_URL=http://localhost:3000`, and `DATABASE_URL` to your Neon connection string.
 
 The monorepo uses the Vercel Queue local devserver for local cross-process queueing, so local development does not need an expiring cloud token or Redis connection. From the `python-worker` directory, install the devserver extra and start it in its own terminal:
 

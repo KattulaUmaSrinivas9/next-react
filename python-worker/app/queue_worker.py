@@ -8,6 +8,7 @@ import httpx
 from vercel.queue import ALL_DEPLOYMENTS, QueueClient, subscribe
 
 from app.response_builder import build_demo_response
+from app.sql_execution import execute_read_query, resolve_sql_query
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +40,37 @@ async def handle_chat_message(message: dict[str, object]) -> None:
 
     base_url = os.getenv("NEXT_API_BASE_URL", "http://localhost:3000").rstrip("/")
     callback_host = urlsplit(base_url).hostname
+    query = resolve_sql_query(text)
+    if query is not None:
+        _log_event("chat.sql.query_detected", messageId=message_id)
+        try:
+            chat_response = await execute_read_query(query)
+            _log_event(
+                "chat.sql.query_completed",
+                messageId=message_id,
+                responseType=chat_response.get("type"),
+                rowCount=(
+                    len(chat_response.get("rows", []))
+                    if isinstance(chat_response.get("rows"), list)
+                    else None
+                ),
+            )
+        except ValueError as exc:
+            chat_response = {"type": "text", "content": str(exc)}
+            _log_event("chat.sql.query_rejected", messageId=message_id)
+        except Exception:
+            logger.exception(json.dumps({"event": "chat.sql.query_failed", "messageId": message_id}))
+            chat_response = {
+                "type": "text",
+                "content": "The SQL query failed unexpectedly. Check the Python worker logs and try again.",
+            }
+    else:
+        chat_response = build_demo_response(text)
+
     result = {
         "userId": user_id,
         "messageId": message_id,
-        "response": build_demo_response(text),
+        "response": chat_response,
     }
 
     # A failed callback raises, leaving the queue message available for retry.
