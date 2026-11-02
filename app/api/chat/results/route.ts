@@ -51,19 +51,34 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid result." }, { status: 400 });
   }
   const result = body as Record<string, unknown>;
-  if (typeof result.userId !== "string" || !result.userId || typeof result.messageId !== "string" || !result.messageId || !isAssistantResponse(result.response)) {
+  if (typeof result.userId !== "string" || !result.userId
+    || typeof result.conversationId !== "string" || !result.conversationId
+    || typeof result.messageId !== "string" || !result.messageId
+    || !isAssistantResponse(result.response)) {
     logChatInfo("chat.callback.rejected", {
       messageId: typeof result.messageId === "string" ? result.messageId : undefined,
       reason: "invalid_result_shape",
       status: 400,
     });
-    return Response.json({ error: "Result must include userId, messageId, and a supported response." }, { status: 400 });
+    return Response.json({ error: "Result must include userId, conversationId, messageId, and a supported response." }, { status: 400 });
   }
 
-  logChatInfo("chat.callback.validated", { messageId: result.messageId });
+  logChatInfo("chat.callback.validated", {
+    messageId: result.messageId,
+    conversationId: result.conversationId,
+  });
   try {
-    await emitChatResponse({ userId: result.userId, messageId: result.messageId, response: result.response });
-    logChatInfo("chat.callback.accepted", { messageId: result.messageId, status: 202 });
+    await emitChatResponse({
+      userId: result.userId,
+      conversationId: result.conversationId,
+      messageId: result.messageId,
+      response: result.response,
+    });
+    logChatInfo("chat.callback.accepted", {
+      messageId: result.messageId,
+      conversationId: result.conversationId,
+      status: 202,
+    });
     return Response.json({ accepted: true }, { status: 202 });
   } catch (error) {
     logChatError("chat.callback.publish_failed", error, { messageId: result.messageId, status: 503 });

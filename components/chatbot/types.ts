@@ -12,10 +12,10 @@ export type AssistantResponse =
   | { type: "chart"; title: string; chartType: "bar" | "line" | "pie"; data: ChartPoint[]; xKey: string; series: ChartSeries[] }
   | { type: "table"; title: string; columns: string[]; rows: TableRow[] };
 
-export type ChatMessageRequest = { messageId: string; text: string };
+export type ChatMessageRequest = { conversationId: string; messageId: string; text: string };
 export type ChatSocketEvent =
   | { type: "chat:ack"; messageId: string; accepted: boolean; error?: string }
-  | { type: "chat:response"; messageId?: string; response: AssistantResponse };
+  | { type: "chat:response"; conversationId: string; messageId: string; response: AssistantResponse };
 
 export type MessageType = AssistantResponse["type"];
 export type ChatMessage = AssistantResponse & { id: number; role: MessageRole };

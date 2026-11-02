@@ -2,8 +2,10 @@ import { createClient, type RedisClientType } from "redis";
 import type { Server } from "socket.io";
 import type { AssistantResponse } from "../components/chatbot/types";
 import { logChatError, logChatInfo } from "./chat-log.js";
+import { chatConversationRoom } from "./chat-room.js";
 
 type ChatResponseEvent = {
+  conversationId: string;
   userId: string;
   messageId: string;
   response: AssistantResponse;
@@ -17,7 +19,8 @@ type ChatSocketGlobal = typeof globalThis & { __chatSocketServer?: Server };
 function isChatResponseEvent(value: unknown): value is ChatResponseEvent {
   if (typeof value !== "object" || value === null) return false;
   const event = value as Record<string, unknown>;
-  return typeof event.userId === "string"
+  return typeof event.conversationId === "string"
+    && typeof event.userId === "string"
     && typeof event.messageId === "string"
     && typeof event.response === "object"
     && event.response !== null;
@@ -72,7 +75,8 @@ export function subscribeToChatResponses(io: Server) {
           return;
         }
         logChatInfo("chat.redis.response_received", { messageId: event.messageId });
-        io.to(event.userId).emit("chat:response", {
+        io.to(chatConversationRoom(event.userId, event.conversationId)).emit("chat:response", {
+          conversationId: event.conversationId,
           messageId: event.messageId,
           response: event.response,
         });
@@ -97,7 +101,8 @@ export async function emitChatResponse(event: ChatResponseEvent) {
   if (!process.env.REDIS_URL) {
     const io = (globalThis as ChatSocketGlobal).__chatSocketServer;
     if (!io) throw new Error("No local Socket.IO server is registered and REDIS_URL is not configured.");
-    io.to(event.userId).emit("chat:response", {
+    io.to(chatConversationRoom(event.userId, event.conversationId)).emit("chat:response", {
+      conversationId: event.conversationId,
       messageId: event.messageId,
       response: event.response,
     });

@@ -14,16 +14,19 @@ function isChatSocketEvent(value: unknown): value is ChatSocketEvent {
     return typeof event.messageId === "string" && typeof event.accepted === "boolean";
   }
   if (event.type === "chat:response" && typeof event.response === "object" && event.response !== null) {
-    return "type" in event.response;
+    return typeof event.conversationId === "string"
+      && typeof event.messageId === "string"
+      && "type" in event.response;
   }
   return false;
 }
 
-export function connectChatSocket(callbacks: Callbacks) {
+export function connectChatSocket(conversationId: string, callbacks: Callbacks) {
   const socket: Socket = io({
     path: "/api/socket-io",
     addTrailingSlash: false,
     withCredentials: true,
+    auth: { conversationId },
     // Vercel Functions support Socket.IO over WebSocket, not HTTP long-polling.
     transports: ["websocket"],
     reconnection: true,

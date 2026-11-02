@@ -2,6 +2,7 @@ import { QueueClient } from "@vercel/queue";
 import { logChatError, logChatInfo } from "./chat-log.js";
 
 export type QueuedChatMessage = {
+  conversationId: string;
   messageId: string;
   userId: string;
   text: string;

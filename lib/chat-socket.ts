@@ -2,6 +2,7 @@ import type { Server, Socket } from "socket.io";
 import { enqueueChatMessage } from "./chat-queue.js";
 import { registerLocalChatSocketServer, subscribeToChatResponses } from "./chat-realtime.js";
 import { getChatSessionUserId } from "./chat-session.js";
+import { chatConversationRoom } from "./chat-room.js";
 import { logChatError, logChatInfo } from "./chat-log.js";
 import type { ChatMessageRequest } from "../components/chatbot/types";
 
@@ -13,6 +14,8 @@ function isChatMessage(value: unknown): value is ChatMessageRequest {
   return typeof message.messageId === "string"
     && message.messageId.length > 0
     && message.messageId.length <= 128
+    && typeof message.conversationId === "string"
+    && message.conversationId.length <= 64
     && typeof message.text === "string"
     && message.text.length <= 10_000;
 }
@@ -20,6 +23,11 @@ function isChatMessage(value: unknown): value is ChatMessageRequest {
 async function handleChatMessage(socket: Socket, value: unknown) {
   if (!isChatMessage(value)) {
     logChatInfo("chat.socket.message_rejected", { reason: "invalid_payload" });
+    return;
+  }
+
+  if (value.conversationId !== socket.data.conversationId) {
+    logChatInfo("chat.socket.message_rejected", { reason: "conversation_mismatch" });
     return;
   }
 
@@ -43,7 +51,12 @@ async function handleChatMessage(socket: Socket, value: unknown) {
 
   const userId = socket.data.userId as string;
   try {
-    await enqueueChatMessage({ messageId: value.messageId, userId, text });
+    await enqueueChatMessage({
+      conversationId: value.conversationId,
+      messageId: value.messageId,
+      userId,
+      text,
+    });
     logChatInfo("chat.socket.ack_sent", { messageId: value.messageId, accepted: true });
     socket.emit("chat:ack", { messageId: value.messageId, accepted: true });
   } catch (error) {
@@ -66,16 +79,24 @@ export function registerChatSocketHandlers(io: Server) {
   const realtimeReady = subscribeToChatResponses(io);
   io.use(async (socket, next) => {
     const userId = getChatSessionUserId(socket.handshake.headers.cookie);
+    const conversationId = socket.handshake.auth?.conversationId;
     if (!userId) {
       logChatInfo("chat.socket.connection_rejected", { reason: "missing_session" });
       next(new Error("Sign in before connecting to chat."));
       return;
     }
+    if (typeof conversationId !== "string"
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(conversationId)) {
+      logChatInfo("chat.socket.connection_rejected", { reason: "invalid_conversation" });
+      next(new Error("A valid chat conversation is required."));
+      return;
+    }
     try {
       await realtimeReady;
       socket.data.userId = userId;
-      await socket.join(userId);
-      logChatInfo("chat.socket.connected", { socketId: socket.id });
+      socket.data.conversationId = conversationId;
+      await socket.join(chatConversationRoom(userId, conversationId));
+      logChatInfo("chat.socket.connected", { socketId: socket.id, conversationId });
       next();
     } catch (error) {
       logChatError("chat.socket.connection_setup_failed", error, { socketId: socket.id });

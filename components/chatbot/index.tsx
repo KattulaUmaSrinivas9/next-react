@@ -11,6 +11,7 @@ export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
   const [userId, setUserId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const connectionRef = useRef<ReturnType<typeof connectChatSocket> | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
@@ -32,6 +33,10 @@ export default function Chatbot() {
   }, []);
 
   useEffect(() => {
+    setConversationId(crypto.randomUUID());
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     fetch("/api/auth/session", { cache: "no-store" })
       .then((response) => response.json())
@@ -45,12 +50,14 @@ export default function Chatbot() {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !conversationId) return;
 
-    const connection = connectChatSocket({
+    const connection = connectChatSocket(conversationId, {
       onStatusChange: setConnectionStatus,
       onEvent: (event) => {
-        if (event.type === "chat:response") appendMessage(event.response, "assistant");
+        if (event.type === "chat:response" && event.conversationId === conversationId) {
+          appendMessage(event.response, "assistant");
+        }
         if (event.type === "chat:ack" && !event.accepted) {
           appendMessage({ type: "text", content: event.error ?? "Message could not be sent." }, "assistant");
         }
@@ -62,7 +69,7 @@ export default function Chatbot() {
       connection.close();
       connectionRef.current = null;
     };
-  }, [appendMessage, userId]);
+  }, [appendMessage, conversationId, userId]);
 
   async function signIn(credentials: { username: string; password: string }) {
     const response = await fetch("/api/auth/login", {
@@ -83,6 +90,7 @@ export default function Chatbot() {
     connectionRef.current = null;
     setConnectionStatus("disconnected");
     setUserId(null);
+    setConversationId(crypto.randomUUID());
     setMessages([{
       id: 1,
       role: "assistant",
@@ -95,7 +103,8 @@ export default function Chatbot() {
   }
 
   function sendMessage(content: string) {
-    const payload: ChatMessageRequest = { messageId: crypto.randomUUID(), text: content };
+    if (!conversationId) return;
+    const payload: ChatMessageRequest = { conversationId, messageId: crypto.randomUUID(), text: content };
     if (!connectionRef.current?.send(payload)) return;
     appendMessage({ type: "text", content }, "user");
   }

@@ -20,18 +20,26 @@ def _log_event(event: str, **fields: object) -> None:
 @subscribe(topic="chat-messages", consumer_group="chat-python-worker")
 async def handle_chat_message(message: dict[str, object]) -> None:
     user_id = message.get("userId")
+    conversation_id = message.get("conversationId")
     message_id = message.get("messageId")
     text = message.get("text")
 
-    if not all(isinstance(value, str) and value for value in (user_id, message_id, text)):
+    if not all(
+        isinstance(value, str) and value
+        for value in (user_id, conversation_id, message_id, text)
+    ):
         _log_event(
             "chat.queue.message_rejected",
             reason="missing_required_fields",
             messageId=message_id if isinstance(message_id, str) else None,
         )
-        raise ValueError("Queue message must include userId, messageId, and text.")
+        raise ValueError("Queue message must include userId, conversationId, messageId, and text.")
 
-    _log_event("chat.queue.message_received", messageId=message_id)
+    _log_event(
+        "chat.queue.message_received",
+        messageId=message_id,
+        conversationId=conversation_id,
+    )
 
     callback_secret = os.getenv("NEXT_CHAT_CALLBACK_SECRET", "")
     if not callback_secret:
@@ -69,6 +77,7 @@ async def handle_chat_message(message: dict[str, object]) -> None:
 
     result = {
         "userId": user_id,
+        "conversationId": conversation_id,
         "messageId": message_id,
         "response": chat_response,
     }
@@ -77,6 +86,7 @@ async def handle_chat_message(message: dict[str, object]) -> None:
     _log_event(
         "chat.callback.request_started",
         messageId=message_id,
+        conversationId=conversation_id,
         callbackHost=callback_host,
         path="/api/chat/results",
     )
