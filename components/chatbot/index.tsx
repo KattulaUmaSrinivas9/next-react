@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import MessageComposer from "./MessageComposer";
 import MessageList from "./MessageList";
 import type { AssistantResponse, ChatMessage, ChatMessageRequest, MessageRole } from "./types";
@@ -11,9 +11,7 @@ export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
   const [userId, setUserId] = useState<string | null>(null);
-  const conversationSeed = useId();
-  const [conversationGeneration, setConversationGeneration] = useState(0);
-  const conversationId = `${conversationSeed}-${conversationGeneration}`;
+  const [conversationId, setConversationId] = useState(() => crypto.randomUUID());
   const connectionRef = useRef<ReturnType<typeof connectChatSocket> | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
@@ -88,7 +86,7 @@ export default function Chatbot() {
     connectionRef.current = null;
     setConnectionStatus("disconnected");
     setUserId(null);
-    setConversationGeneration((generation) => generation + 1);
+    setConversationId(crypto.randomUUID());
     setMessages([{
       id: 1,
       role: "assistant",
