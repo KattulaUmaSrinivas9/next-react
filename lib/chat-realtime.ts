@@ -1,4 +1,4 @@
-import amqp, { type Channel, type Connection } from "amqplib";
+import amqp, { type Channel, type ChannelModel } from "amqplib";
 import { URL } from "node:url";
 import type { Server } from "socket.io";
 import type { AssistantResponse } from "../components/chatbot/types";
@@ -16,7 +16,7 @@ type InstanceConsumer = { channel: Channel; consumerTag: string; refs: number; q
 const responseExchange = process.env.CHAT_RESPONSE_EXCHANGE ?? "chat.responses.fanout";
 const socketAckTimeoutMs = Number(process.env.CHAT_RESPONSE_ACK_TIMEOUT_MS ?? 5000);
 const consumers = new Map<Server, Promise<InstanceConsumer>>();
-let connectionPromise: Promise<Connection> | undefined;
+let connectionPromise: Promise<ChannelModel> | undefined;
 
 async function getConnection() {
   if (!connectionPromise) {
@@ -107,7 +107,7 @@ async function createInstanceConsumer(io: Server): Promise<InstanceConsumer> {
       conversationId: event.conversationId,
       messageId: event.messageId,
       response: event.response,
-    }, (error, acknowledgements: unknown[]) => {
+    }, (error: Error, acknowledgements: unknown[]) => {
       const acknowledgementCount = Array.isArray(acknowledgements) ? acknowledgements.length : 0;
       if (error || acknowledgementCount === 0) {
         logChatError("chat.socket.response_delivery_unconfirmed", error ?? "No client acknowledgments received.", {

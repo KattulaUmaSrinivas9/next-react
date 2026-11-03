@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import MessageComposer from "./MessageComposer";
 import MessageList from "./MessageList";
 import type { AssistantResponse, ChatMessage, ChatMessageRequest, MessageRole } from "./types";
@@ -11,7 +11,9 @@ export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
   const [userId, setUserId] = useState<string | null>(null);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const conversationSeed = useId();
+  const [conversationGeneration, setConversationGeneration] = useState(0);
+  const conversationId = `${conversationSeed}-${conversationGeneration}`;
   const connectionRef = useRef<ReturnType<typeof connectChatSocket> | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
@@ -33,10 +35,6 @@ export default function Chatbot() {
   }, []);
 
   useEffect(() => {
-    setConversationId(crypto.randomUUID());
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
     fetch("/api/auth/session", { cache: "no-store" })
       .then((response) => response.json())
@@ -50,7 +48,7 @@ export default function Chatbot() {
   }, []);
 
   useEffect(() => {
-    if (!userId || !conversationId) return;
+    if (!userId) return;
 
     const connection = connectChatSocket(conversationId, {
       onStatusChange: setConnectionStatus,
@@ -90,7 +88,7 @@ export default function Chatbot() {
     connectionRef.current = null;
     setConnectionStatus("disconnected");
     setUserId(null);
-    setConversationId(crypto.randomUUID());
+    setConversationGeneration((generation) => generation + 1);
     setMessages([{
       id: 1,
       role: "assistant",
@@ -103,7 +101,6 @@ export default function Chatbot() {
   }
 
   function sendMessage(content: string) {
-    if (!conversationId) return;
     const payload: ChatMessageRequest = { conversationId, messageId: crypto.randomUUID(), text: content };
     if (!connectionRef.current?.send(payload)) return;
     appendMessage({ type: "text", content }, "user");

@@ -1,4 +1,4 @@
-import amqp, { type ConfirmChannel, type Connection } from "amqplib";
+import amqp, { type ChannelModel, type ConfirmChannel } from "amqplib";
 import { URL } from "node:url";
 import { logChatError, logChatInfo } from "./chat-log.js";
 
@@ -11,7 +11,7 @@ export type QueuedChatMessage = {
 };
 
 const requestQueue = process.env.CHAT_REQUEST_QUEUE ?? "chat.requests";
-let connectionPromise: Promise<Connection> | undefined;
+let connectionPromise: Promise<ChannelModel> | undefined;
 let channelPromise: Promise<ConfirmChannel> | undefined;
 
 async function getChannel() {
