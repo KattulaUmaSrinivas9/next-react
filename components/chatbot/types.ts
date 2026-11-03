@@ -14,7 +14,7 @@ export type AssistantResponse =
 
 export type ChatMessageRequest = { conversationId: string; messageId: string; text: string };
 export type ChatSocketEvent =
-  | { type: "chat:ack"; messageId: string; accepted: boolean; error?: string }
+  | { type: "chat:ack"; conversationId: string; messageId: string; accepted: boolean; error?: string }
   | { type: "chat:response"; conversationId: string; messageId: string; response: AssistantResponse };
 
 export type MessageType = AssistantResponse["type"];

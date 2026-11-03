@@ -11,7 +11,9 @@ function isChatSocketEvent(value: unknown): value is ChatSocketEvent {
   if (typeof value !== "object" || value === null || !("type" in value)) return false;
   const event = value as Record<string, unknown>;
   if (event.type === "chat:ack") {
-    return typeof event.messageId === "string" && typeof event.accepted === "boolean";
+    return typeof event.conversationId === "string"
+      && typeof event.messageId === "string"
+      && typeof event.accepted === "boolean";
   }
   if (event.type === "chat:response" && typeof event.response === "object" && event.response !== null) {
     return typeof event.conversationId === "string"
@@ -34,8 +36,14 @@ export function connectChatSocket(conversationId: string, callbacks: Callbacks) 
     reconnectionDelayMax: 30000,
   });
 
-  socket.on("connect", () => callbacks.onStatusChange("connected"));
-  socket.on("disconnect", () => callbacks.onStatusChange("disconnected"));
+  socket.on("connect", () => {
+    console.info("chat.client.socket_connected", { conversationId, socketId: socket.id });
+    callbacks.onStatusChange("connected");
+  });
+  socket.on("disconnect", (reason) => {
+    console.info("chat.client.socket_disconnected", { conversationId, reason });
+    callbacks.onStatusChange("disconnected");
+  });
   socket.on("connect_error", (error) => {
     const details = error as Error & { description?: unknown; context?: unknown };
     console.error("Chat socket connection failed:", {
@@ -43,6 +51,7 @@ export function connectChatSocket(conversationId: string, callbacks: Callbacks) 
       description: details.description,
       context: details.context,
     });
+    console.error("chat.client.socket_connect_failed", { conversationId, message: details.message });
     callbacks.onStatusChange("disconnected");
   });
   socket.on("chat:ack", (payload: unknown) => {
@@ -50,22 +59,35 @@ export function connectChatSocket(conversationId: string, callbacks: Callbacks) 
     if (isChatSocketEvent(event) && event.type === "chat:ack") {
       console.info("chat.client.ack_received", {
         messageId: event.messageId,
+        conversationId: event.conversationId,
         accepted: event.accepted,
       });
       callbacks.onEvent(event);
     }
   });
-  socket.on("chat:response", (payload: unknown) => {
+  socket.on("chat:response", (payload: unknown, acknowledge?: () => void) => {
     const event = { type: "chat:response", ...payload as object };
     if (isChatSocketEvent(event) && event.type === "chat:response") {
-      console.info("chat.client.response_received", { messageId: event.messageId });
+      console.info("chat.client.response_received", {
+        messageId: event.messageId,
+        conversationId: event.conversationId,
+      });
       callbacks.onEvent(event);
+      console.info("chat.client.response_ack_sent", {
+        messageId: event.messageId,
+        conversationId: event.conversationId,
+      });
+      acknowledge?.();
     }
   });
 
   return {
     send(message: ChatMessageRequest) {
       if (!socket.connected) return false;
+      console.info("chat.client.message_sent", {
+        messageId: message.messageId,
+        conversationId: message.conversationId,
+      });
       socket.emit("chat:message", message);
       return true;
     },

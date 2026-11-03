@@ -1,12 +1,12 @@
 import type { Server, Socket } from "socket.io";
 import { enqueueChatMessage } from "./chat-queue.js";
-import { registerLocalChatSocketServer, subscribeToChatResponses } from "./chat-realtime.js";
+import { subscribeToChatResponses } from "./chat-realtime.js";
 import { getChatSessionUserId } from "./chat-session.js";
 import { chatConversationRoom } from "./chat-room.js";
 import { logChatError, logChatInfo } from "./chat-log.js";
 import type { ChatMessageRequest } from "../components/chatbot/types";
 
-type ChatAck = { messageId: string; accepted: boolean; error?: string };
+type ChatAck = { conversationId: string; messageId: string; accepted: boolean; error?: string };
 
 function isChatMessage(value: unknown): value is ChatMessageRequest {
   if (typeof value !== "object" || value === null) return false;
@@ -22,26 +22,45 @@ function isChatMessage(value: unknown): value is ChatMessageRequest {
 
 async function handleChatMessage(socket: Socket, value: unknown) {
   if (!isChatMessage(value)) {
-    logChatInfo("chat.socket.message_rejected", { reason: "invalid_payload" });
+    logChatInfo("chat.socket.message_rejected", {
+      reason: "invalid_payload",
+      conversationId: typeof value === "object" && value !== null
+        && typeof (value as Record<string, unknown>).conversationId === "string"
+        ? (value as { conversationId: string }).conversationId
+        : undefined,
+      messageId: typeof value === "object" && value !== null
+        && typeof (value as Record<string, unknown>).messageId === "string"
+        ? (value as { messageId: string }).messageId
+        : undefined,
+    });
     return;
   }
 
   if (value.conversationId !== socket.data.conversationId) {
-    logChatInfo("chat.socket.message_rejected", { reason: "conversation_mismatch" });
+    logChatInfo("chat.socket.message_rejected", {
+      reason: "conversation_mismatch",
+      messageId: value.messageId,
+      conversationId: value.conversationId,
+    });
     return;
   }
 
-  logChatInfo("chat.socket.message_received", { messageId: value.messageId });
+  logChatInfo("chat.socket.message_received", {
+    messageId: value.messageId,
+    conversationId: value.conversationId,
+  });
 
   const text = value.text.trim();
   if (!text) {
     const ack: ChatAck = {
       messageId: value.messageId,
+      conversationId: value.conversationId,
       accepted: false,
       error: "Message text is required.",
     };
     logChatInfo("chat.socket.ack_sent", {
       messageId: value.messageId,
+      conversationId: value.conversationId,
       accepted: false,
       reason: "empty_text",
     });
@@ -50,23 +69,40 @@ async function handleChatMessage(socket: Socket, value: unknown) {
   }
 
   const userId = socket.data.userId as string;
+  let failureStage = "response_queue_setup";
   try {
+    await (socket.data.responseQueueReady as Promise<void> | undefined);
+    failureStage = "request_publish";
     await enqueueChatMessage({
       conversationId: value.conversationId,
       messageId: value.messageId,
       userId,
       text,
     });
-    logChatInfo("chat.socket.ack_sent", { messageId: value.messageId, accepted: true });
-    socket.emit("chat:ack", { messageId: value.messageId, accepted: true });
-  } catch (error) {
-    logChatError("chat.socket.enqueue_failed", error, { messageId: value.messageId });
     logChatInfo("chat.socket.ack_sent", {
       messageId: value.messageId,
-      accepted: false,
-      reason: "queue_publish_failed",
+      conversationId: value.conversationId,
+      accepted: true,
     });
     socket.emit("chat:ack", {
+      conversationId: value.conversationId,
+      messageId: value.messageId,
+      accepted: true,
+    });
+  } catch (error) {
+    logChatError("chat.socket.message_pipeline_failed", error, {
+      messageId: value.messageId,
+      conversationId: value.conversationId,
+      stage: failureStage,
+    });
+    logChatInfo("chat.socket.ack_sent", {
+      messageId: value.messageId,
+      conversationId: value.conversationId,
+      accepted: false,
+      reason: failureStage,
+    });
+    socket.emit("chat:ack", {
+      conversationId: value.conversationId,
       messageId: value.messageId,
       accepted: false,
       error: "Message could not be added to the queue. Please try again.",
@@ -75,8 +111,6 @@ async function handleChatMessage(socket: Socket, value: unknown) {
 }
 
 export function registerChatSocketHandlers(io: Server) {
-  registerLocalChatSocketServer(io);
-  const realtimeReady = subscribeToChatResponses(io);
   io.use(async (socket, next) => {
     const userId = getChatSessionUserId(socket.handshake.headers.cookie);
     const conversationId = socket.handshake.auth?.conversationId;
@@ -92,7 +126,6 @@ export function registerChatSocketHandlers(io: Server) {
       return;
     }
     try {
-      await realtimeReady;
       socket.data.userId = userId;
       socket.data.conversationId = conversationId;
       await socket.join(chatConversationRoom(userId, conversationId));
@@ -105,6 +138,29 @@ export function registerChatSocketHandlers(io: Server) {
   });
 
   io.on("connection", (socket) => {
+    const responseQueueReady = subscribeToChatResponses(io).then((release) => {
+      socket.data.releaseResponseQueue = release;
+      logChatInfo("chat.socket.response_subscription_ready", {
+        socketId: socket.id,
+        conversationId: socket.data.conversationId as string,
+      });
+    });
+    void responseQueueReady.catch((error) => {
+      logChatError("chat.rabbitmq.response_subscription_failed", error, {
+        conversationId: socket.data.conversationId as string,
+      });
+    });
+    socket.data.responseQueueReady = responseQueueReady;
+    socket.on("disconnect", () => {
+      logChatInfo("chat.socket.disconnected", {
+        socketId: socket.id,
+        conversationId: socket.data.conversationId as string,
+      });
+      void responseQueueReady.then(async () => {
+        const release = socket.data.releaseResponseQueue as (() => Promise<void>) | undefined;
+        if (release) await release();
+      }).catch((error) => logChatError("chat.rabbitmq.response_subscription_failed", error));
+    });
     socket.on("chat:message", (message: unknown) => {
       void handleChatMessage(socket, message);
     });

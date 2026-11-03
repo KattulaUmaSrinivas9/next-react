@@ -1,60 +1,57 @@
-# Chat queue worker
+# Python chat worker
 
-FastAPI serves a local health endpoint, while the production queue consumer runs as a Vercel Daemon. The worker polls Vercel Queue topic `chat-messages`, executes pasted read-only SQL against PostgreSQL (or returns a demo response for non-SQL messages), and POSTs the result to the Next.js callback. Next.js publishes the response through Redis Pub/Sub and delivers it to the browser over Socket.IO.
+The worker consumes chat requests from RabbitMQ, runs the current SQL/demo response logic, and publishes results to a RabbitMQ fanout exchange. Each active Next.js Socket.IO instance has one temporary queue that receives response copies; it emits only replies for rooms connected to that instance.
 
-Redis is only used for the response path. It does not deliver incoming messages to Python. The inbound path is Vercel Queues.
+## Environment
 
-Direct SQL is supported now. The query resolver is `app/sql_execution.py`; later, natural-language-to-SQL can be added there before calling the same read-only execution function.
+Configure these values in `python-worker/.env` locally and in the monorepo Vercel project's Production environment:
 
-## PostgreSQL queries
+- `RABBITMQ_URL`: broker URL reachable from both Vercel and the Python process (`amqp://` locally or `amqps://` for hosted TLS brokers).
+- `CHAT_REQUEST_QUEUE`: durable request queue; default `chat.requests`.
+- `CHAT_RESPONSE_EXCHANGE`: durable fanout exchange; default `chat.responses.fanout`.
+- `CHAT_WORKER_PREFETCH`: concurrent unacknowledged requests; default `1`.
+- `DATABASE_URL`: optional Neon PostgreSQL URL for direct read-only SQL messages.
 
-Set `DATABASE_URL` to the Neon PostgreSQL connection string in `python-worker/.env` locally and in the monorepo Vercel project's Production environment. The URL should include `sslmode=require`. `NEON_DATABASE_URL` is accepted as an alternate variable name. Do not commit the real connection string.
-
-Send a single `SELECT` or `WITH ... SELECT` statement as the chat message. A Markdown SQL code block is also accepted. Results are returned as a chat table, capped at 500 rows; query execution has a 10-second PostgreSQL statement timeout. Other messages keep using the existing demo behavior. Use a Neon database role with read-only privileges as an additional safeguard.
-
-## Vercel deployment
-
-This worker is deployed as the `chat-python-worker` Vercel Daemon declared in the monorepo root `vercel.json`. It must deploy in the same Vercel project as the Next.js producer so both use the same Vercel Queues project scope. Deploy the monorepo to production; Daemons run on production deployments. The configured daemon runs one instance in `iad1`. Check the daemon logs in the shared Vercel project to confirm startup and `Received chat message ...` entries. Daemons do not expose HTTP endpoints, so `/health` is for local FastAPI development only.
-
-Configure these variables in the monorepo's Vercel project Production environment (the same project used by the Next.js app):
-
-- `CHAT_QUEUE_REGION`: the same fixed queue region as the Next.js producer (currently `iad1`).
-- `NEXT_API_BASE_URL`: reachable URL of the Next.js deployment, with no trailing slash; do not use `localhost` in the deployed worker.
-- `NEXT_CHAT_CALLBACK_SECRET`: same value used by the Next.js callback route.
-- `CHAT_QUEUE_DEPLOYMENT_ID` (optional): override the deployment partition only when needed to drain or target a different deployment. In production the worker defaults to Vercel's automatic `VERCEL_DEPLOYMENT_ID`, which matches the Next.js producer because both run in this monorepo deployment. Local development without a Vercel deployment ID polls all partitions.
-
-Leave `VERCEL_QUEUE_BASE_URL` and `VERCEL_QUEUE_TOKEN` unset in Vercel. `VERCEL_QUEUE_TOKEN` overrides OIDC, so never put a copied short-lived token there. The SDK resolves OIDC credentials at runtime and supports the rotating `VERCEL_OIDC_TOKEN_FILE` source. If the daemon logs `TokenResolutionError`, verify that OIDC is enabled and a runtime token source is available; do not reuse a token pulled for local development. The Python and Node SDKs should use hosted Vercel Queues and deployment credentials. Do not run multiple independent worker copies with the same `chat-python-worker` consumer group unless they should compete for messages.
+The Next.js app must use the same broker URL, request queue, and response exchange. Replies are live-only; they are not retained when no Socket.IO instance is subscribed. This matches the former Redis Pub/Sub behavior.
 
 ## Local development
 
-Copy `.env.example` to `.env`. Set the shared callback secret, `NEXT_API_BASE_URL=http://localhost:3000`, and `DATABASE_URL` to your Neon connection string.
+Copy `.env.example` to `.env` and set `RABBITMQ_URL`. Run a local RabbitMQ broker (Docker example):
 
-The monorepo uses the Vercel Queue local devserver for local cross-process queueing, so local development does not need an expiring cloud token or Redis connection. From the `python-worker` directory, install the devserver extra and start it in its own terminal:
+```powershell
+docker run --rm --name chat-rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+```
 
-```cmd
+In one terminal, from the monorepo root:
+
+```powershell
+npm install
+npm run dev
+```
+
+In another terminal, from `python-worker`:
+
+```powershell
 py -m venv .venv
 .venv\Scripts\activate
-py -m pip install -e ".[local-queue]"
-py -m vercel.queue.devserver --host 127.0.0.1 --port 8111
+py -m pip install -e .
+uvicorn app.main:app --env-file .env --host 127.0.0.1 --port 8000
 ```
 
-Both local env files should use the same `VERCEL_QUEUE_BASE_URL=http://127.0.0.1:8111` and `VERCEL_QUEUE_TOKEN=local-token`. The checked-in examples show these local values; do not copy them into Vercel project settings.
+The FastAPI lifespan starts the RabbitMQ consumer. `/health` only confirms the HTTP process is up; check worker logs for `chat.worker.started` and `chat.queue.message_received`.
 
-Run the Next.js app from the monorepo root with `npm run dev`. In another terminal, change to `python-worker`, activate its virtual environment, and start the Python API and poller:
+## Production
 
-```cmd
-.venv\Scripts\activate
-uvicorn app.main:app --env-file .env --host 0.0.0.0 --port 8000
-```
+The worker runs as the `chat-python-worker` Vercel Daemon in the monorepo. Set `RABBITMQ_URL`, the matching queue/exchange names, and `DATABASE_URL` (if using SQL) in the Vercel Production environment. Vercel Queues, Redis, `NEXT_API_BASE_URL`, and callback secrets are no longer part of this flow.
 
-Check `http://localhost:8000/health` for local HTTP process health. The FastAPI lifespan starts the same poller locally.
+## SQL messages
 
-## Message and response flow
+Send a single `SELECT` or `WITH ... SELECT` statement; Markdown SQL fences are accepted. Queries run in a read-only PostgreSQL transaction, have a 10-second statement timeout, and return at most 500 rows. A Neon role with read-only grants is still required. Other text uses the demo response builder until text-to-SQL is added.
 
-1. Next.js authenticates a Socket.IO client and enqueues `{ messageId, userId, text, createdAt }` to topic `chat-messages`.
-2. This worker polls that topic with consumer group `chat-python-worker` and validates `userId`, `messageId`, and `text`.
-3. The worker POSTs `{ userId, messageId, response }` to `<NEXT_API_BASE_URL>/api/chat/results` with `Authorization: Bearer <NEXT_CHAT_CALLBACK_SECRET>`.
-4. Next.js verifies the callback, publishes on Redis channel `chat:responses` in deployment, and emits `chat:response` to the authenticated Socket.IO room named by `userId`. With local Redis unset, the custom Next.js server emits directly to its local Socket.IO instance.
+## Message flow
 
-A Next.js `chat:ack accepted: true` means only that enqueue succeeded. If Python has no receive logs, first confirm the local queue devserver is running and both env files point to the same URL. For missing responses, inspect the callback URL/secret and Next.js logs.
+1. Next.js publishes `{ userId, conversationId, messageId, text, createdAt }` to the durable request queue.
+2. Python consumes, processes, and publishes `{ userId, conversationId, messageId, response }` to the fanout response exchange.
+3. RabbitMQ copies the response to each active Next.js instance queue. Each instance emits only if it has the matching user/conversation room, then acknowledges its copy after a browser acknowledgment.
 
+RabbitMQ request delivery is at least once. A retry can process a request more than once, so future side effects must be idempotent. The temporary response queues are removed when their Socket.IO instance stops consuming.

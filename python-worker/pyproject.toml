@@ -8,14 +8,11 @@ version = "0.1.0"
 description = "FastAPI worker for chat messages queued by the Next.js app"
 requires-python = ">=3.10"
 dependencies = [
+  "aio-pika>=9.4,<10.0",
   "fastapi>=0.115,<1.0",
   "httpx>=0.27,<1.0",
   "psycopg[binary]>=3.2,<4.0",
   "python-dotenv>=1.0,<2.0",
   "sqlglot>=26,<32",
   "uvicorn[standard]>=0.30,<1.0",
-  "vercel-queue>=0.10,<1.0",
 ]
-
-[project.optional-dependencies]
-local-queue = ["vercel-queue[devserver]>=0.10,<1.0"]

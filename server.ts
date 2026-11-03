@@ -15,8 +15,7 @@ const app = next({ dev, hostname, port });
 const handleNextRequest = app.getRequestHandler();
 
 async function startServer() {
-  // This is a custom Node server, so load Next's env files before importing
-  // modules that read env vars at module scope (including the queue client).
+  // Load Next's env files before importing modules that read broker settings.
   loadEnvConfig(process.cwd(), dev);
   const { registerChatSocketHandlers } = await import("./lib/chat-socket.js");
   await app.prepare();
